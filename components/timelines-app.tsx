@@ -5,10 +5,11 @@ import { addDays, format, isSameDay } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { comingSoon } from "@/lib/prototype"
-import { computeWarnings, formatHours, shiftHours, weeklyHours } from "@/lib/schedule"
+import { computeWarnings, formatHours, shiftHours, weeklyHours, type DayStatus } from "@/lib/schedule"
 import {
   BASE_WEEK_START,
   CONNECTORS,
+  DAY_NAMES,
   DEPARTMENTS,
   EMPLOYEES,
   NAV_FOOTER,
@@ -17,6 +18,7 @@ import {
   NAV_TOP,
   NAV_WORK,
   SHIFTS,
+  type DayIndex,
   type DepartmentId,
   type Employee,
   type LocationId,
@@ -172,6 +174,39 @@ export function TimelinesApp() {
     })
   }
 
+  function setDayStatus(employeeId: string, day: DayIndex, status: DayStatus | null) {
+    const before = employees.find((e) => e.id === employeeId)
+    if (!before) return
+    const apply = (e: Employee): Employee => ({
+      ...e,
+      off: status === "off" ? [...e.off.filter((d) => d !== day), day].sort() : e.off.filter((d) => d !== day),
+      sick: status === "sick" ? [...e.sick.filter((d) => d !== day), day].sort() : e.sick.filter((d) => d !== day),
+    })
+    setEmployees((list) => list.map((e) => (e.id === employeeId ? apply(e) : e)))
+    // shifts on that day are re-checked against the new availability
+    const affected = shifts.filter((s) => s.employeeId === employeeId && s.start <= day && s.end >= day)
+    if (affected.length) setTouched((t) => new Set([...t, ...affected.map((s) => s.id)]))
+    markDirty()
+    const first = before.name.split(" ")[0]
+    const wasSick = before.sick.includes(day)
+    const message =
+      status === "off"
+        ? `${first} is off on ${DAY_NAMES[day]}`
+        : status === "sick"
+          ? `${first} is out sick on ${DAY_NAMES[day]}`
+          : `Cleared ${first}'s ${wasSick ? "sick day" : "day off"} on ${DAY_NAMES[day]}`
+    toast(message, {
+      id: "day-status",
+      action: {
+        label: "Undo",
+        onClick: () =>
+          setEmployees((list) =>
+            list.map((e) => (e.id === employeeId ? { ...e, off: before.off, sick: before.sick } : e))
+          ),
+      },
+    })
+  }
+
   function addEmployee(dept: DepartmentId, name: string, role: string) {
     const id = `new-${nextId.current++}`
     const employee: Employee = {
@@ -280,6 +315,7 @@ export function TimelinesApp() {
                   onRemoveShift={removeShift}
                   onResolve={(id) => resolveIds([id], "Warning resolved")}
                   onSaveShift={saveShift}
+                  onSetDayStatus={setDayStatus}
                 />
               )
             })}

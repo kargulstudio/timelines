@@ -12,7 +12,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Connector, Department, Employee, Shift, ShiftWarning, WarningKind } from "@/lib/data"
+import type { Connector, DayIndex, Department, Employee, Shift, ShiftWarning, WarningKind } from "@/lib/data"
+import type { DayStatus } from "@/lib/schedule"
 import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon, VDivider } from "./figma-icon"
 import { ScheduleGrid } from "./schedule-grid"
@@ -39,6 +40,7 @@ type DepartmentCardProps = {
   onRemoveShift: (shift: Shift) => void
   onResolve: (shiftId: string) => void
   onSaveShift: (next: Shift, prev?: Shift) => void
+  onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
 }
 
 /** Figma 1:10044 / 1:10416 — department card: header, schedule table, legend. */
@@ -122,6 +124,7 @@ export function DepartmentCard(props: DepartmentCardProps) {
               onRemoveShift={props.onRemoveShift}
               onResolve={props.onResolve}
               onSaveShift={props.onSaveShift}
+              onSetDayStatus={props.onSetDayStatus}
               employeeHeader={
                 <div className="flex w-60 shrink-0 items-center gap-2 p-3">
                   <span className="tl-plain flex-1 text-sm font-medium text-(--tl-fg-strong)">Employee</span>

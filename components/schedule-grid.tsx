@@ -5,6 +5,14 @@ import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent } from "@/components/ui/popover"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   DAYS,
   DAY_NAMES,
   SHIFTS,
@@ -16,10 +24,10 @@ import {
   type ShiftWarning,
   type WarningKind,
 } from "@/lib/data"
-import { formatHours } from "@/lib/schedule"
+import { formatHours, type DayStatus } from "@/lib/schedule"
 import { FigmaIcon, VDivider } from "./figma-icon"
 import { ShiftBar } from "./shift-bar"
-import { ShiftEditor, type EditorTarget } from "./shift-editor"
+import { SECONDARY_BTN, ShiftEditor, type EditorTarget } from "./shift-editor"
 
 /** Row pitch (Figma: rules every 85px). The last row is clipped to 76px like the Figma frame. */
 const ROW = 85
@@ -57,6 +65,8 @@ type ScheduleGridProps = {
   onResolve: (shiftId: string) => void
   /** create (prev undefined) or update a shift */
   onSaveShift: (next: Shift, prev?: Shift) => void
+  /** mark a day off / sick, or clear it back to empty (null) */
+  onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
 }
 
 /** Figma 1:10059 — employee column + 7-day CSS grid with bars, unavailable cells and links. */
@@ -76,6 +86,7 @@ export function ScheduleGrid({
   onRemoveShift,
   onResolve,
   onSaveShift,
+  onSetDayStatus,
 }: ScheduleGridProps) {
   const rowOf = new Map(employees.map((e, i) => [e.id, i]))
   const byId = new Map(employees.map((e) => [e.id, e]))
@@ -175,32 +186,47 @@ export function ScheduleGrid({
             <div key={`track-${e.id}`} aria-hidden className="tl-row-track col-span-7" style={{ gridRow: i + 1, gridColumn: "1 / -1" }} />
           ))}
 
-          {/* z1: unavailable cells */}
+          {/* z1: unavailable cells — click for a small menu to switch or clear them */}
           {employees.flatMap((e, i) => [
             ...e.off.map((d) => (
-              <div
+              <DayStatusMenu
                 key={`off-${e.id}-${d}`}
-                className="tl-hatch-off relative z-[1] mt-px flex items-center justify-center"
-                style={{ gridRow: i + 1, gridColumn: d + 1 }}
+                employee={e}
+                day={d}
+                status="off"
+                showSick={showSick}
+                onSetDayStatus={onSetDayStatus}
+                trigger={
+                  <DropdownMenuTrigger
+                    className="tl-hatch-off tl-day relative z-[1] mt-px flex items-center justify-center outline-none"
+                    style={{ gridRow: i + 1, gridColumn: d + 1 }}
+                    aria-label={`${e.name} is off on ${DAY_NAMES[d]}. Change`}
+                  />
+                }
               >
                 <span className="flex items-center justify-center rounded-[5px] bg-white px-1.5 py-1 shadow-(--tl-shadow-chip)">
                   <span className="px-0.5 text-sm font-medium text-(--tl-fg-button)">OFF</span>
                 </span>
-              </div>
+              </DayStatusMenu>
             )),
             ...(showSick
               ? e.sick.map((d) => (
-                  <Tooltip key={`sick-${e.id}-${d}`}>
-                    <TooltipTrigger
-                      render={<div />}
-                      className="tl-hatch-sick relative z-[1] mt-px"
-                      style={{ gridRow: i + 1, gridColumn: d + 1 }}
-                      aria-label={`${e.name} is out sick on ${DAYS[d]}`}
-                    />
-                    <TooltipContent>
-                      {e.name.split(" ")[0]} · sick on {DAYS[d]}
-                    </TooltipContent>
-                  </Tooltip>
+                  <DayStatusMenu
+                    key={`sick-${e.id}-${d}`}
+                    employee={e}
+                    day={d}
+                    status="sick"
+                    showSick={showSick}
+                    onSetDayStatus={onSetDayStatus}
+                    tooltip={`${e.name.split(" ")[0]} · sick on ${DAYS[d]}`}
+                    trigger={
+                      <DropdownMenuTrigger
+                        className="tl-hatch-sick tl-day relative z-[1] mt-px outline-none"
+                        style={{ gridRow: i + 1, gridColumn: d + 1 }}
+                        aria-label={`${e.name} is out sick on ${DAY_NAMES[d]}. Change`}
+                      />
+                    }
+                  />
                 ))
               : []),
           ])}
@@ -216,7 +242,9 @@ export function ScheduleGrid({
                   employee={e}
                   day={day}
                   row={i}
+                  showSick={showSick}
                   onAdd={(anchor) => openEditor({ kind: "add", employeeId: e.id, day }, anchor)}
+                  onSetDayStatus={onSetDayStatus}
                 />
               )
             })
@@ -324,6 +352,36 @@ export function ScheduleGrid({
                 setEditorOpen(false)
                 onRemoveShift(shift)
               }}
+              extraActions={
+                editor.target.kind === "add" && (
+                  <>
+                    <button
+                      type="button"
+                      className={SECONDARY_BTN}
+                      onClick={() => {
+                        if (editor.target.kind !== "add") return
+                        setEditorOpen(false)
+                        onSetDayStatus(editor.target.employeeId, editor.target.day, "off")
+                      }}
+                    >
+                      Day off
+                    </button>
+                    {showSick && (
+                      <button
+                        type="button"
+                        className={SECONDARY_BTN}
+                        onClick={() => {
+                          if (editor.target.kind !== "add") return
+                          setEditorOpen(false)
+                          onSetDayStatus(editor.target.employeeId, editor.target.day, "sick")
+                        }}
+                      >
+                        Sick
+                      </button>
+                    )}
+                  </>
+                )
+              }
             />
           )}
         </PopoverContent>
@@ -332,38 +390,120 @@ export function ScheduleGrid({
   )
 }
 
-/** Empty day in an employee row: the whole cell adds a shift; a ghost bar shows on hover / focus. */
+/**
+ * Empty day in an employee row: the whole cell adds a shift (a ghost bar shows
+ * on hover / focus); a small corner menu marks the day off or sick.
+ */
 function EmptyCell({
   employee,
   day,
   row,
+  showSick,
   onAdd,
+  onSetDayStatus,
 }: {
   employee: Employee
   day: DayIndex
   row: number
+  showSick: boolean
   onAdd: (anchor: HTMLElement) => void
+  onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
 }) {
+  const cellRef = useRef<HTMLDivElement>(null)
   return (
-    <button
-      type="button"
-      onClick={(e) => onAdd(e.currentTarget)}
-      aria-label={`Add a shift for ${employee.name} on ${DAY_NAMES[day]}`}
-      className="group/cell relative z-[1] mt-px cursor-pointer outline-none"
-      style={{ gridRow: row + 1, gridColumn: day + 1 }}
-    >
+    <div ref={cellRef} className="group/cell relative z-[1] mt-px" style={{ gridRow: row + 1, gridColumn: day + 1 }}>
+      <button
+        type="button"
+        onClick={(e) => onAdd(e.currentTarget)}
+        aria-label={`Add a shift for ${employee.name} on ${DAY_NAMES[day]}`}
+        className="peer absolute inset-0 cursor-pointer outline-none"
+      />
       <span
         aria-hidden
         className={cn(
-          "absolute top-[26px] right-2.5 left-[7px] flex h-[30px] items-center justify-center gap-1 rounded-[7px] bg-white/70",
-          "text-[13px] font-medium text-(--tl-fg-legend) shadow-[0px_0px_0px_1px_var(--tl-ring)] [border:1px_dashed_#d9d9d9]",
+          "pointer-events-none absolute top-[26px] right-2.5 left-[7px] flex h-[30px] items-center justify-center gap-1 rounded-[7px] bg-white/70",
+          "shadow-[0px_0px_0px_1px_var(--tl-ring)] [border:1px_dashed_#d9d9d9]",
           "opacity-0 transition-opacity duration-(--duration-fast) ease-out-strong",
-          "group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100 group-focus-visible/cell:shadow-[0px_0px_0px_2px_var(--ring-focus)]"
+          "group-hover/cell:opacity-100 peer-focus-visible:opacity-100 peer-focus-visible:shadow-[0px_0px_0px_2px_var(--ring-focus)]"
         )}
       >
         <FigmaIcon src="/figma/icons/plus.svg" size={12} />
       </span>
-    </button>
+      {/* keyboard users get the same actions from the editor's "Day off" / "Sick" buttons */}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          tabIndex={-1}
+          aria-label={`Day options for ${employee.name} on ${DAY_NAMES[day]}`}
+          className={cn(
+            "absolute top-1 right-1 flex size-5 cursor-pointer items-center justify-center rounded-[5px] opacity-0 outline-none",
+            "transition-[opacity,background-color] duration-(--duration-fast) hover:bg-[rgba(13,14,19,0.05)] data-popup-open:bg-[rgba(13,14,19,0.08)]",
+            "group-hover/cell:opacity-100 data-popup-open:opacity-100 pointer-coarse:hidden"
+          )}
+        >
+          <FigmaIcon src="/figma/icons/dots-horizontal.svg" size={12} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44" sideOffset={6}>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{DAY_NAMES[day]}</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => cellRef.current && onAdd(cellRef.current)}>Add shift…</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onSetDayStatus(employee.id, day, "off")}>Mark as day off</DropdownMenuItem>
+            {showSick && (
+              <DropdownMenuItem onClick={() => onSetDayStatus(employee.id, day, "sick")}>Mark as sick</DropdownMenuItem>
+            )}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+/** OFF / Sick cell: the hatched cell itself opens a menu to switch or clear the day. */
+function DayStatusMenu({
+  employee,
+  day,
+  status,
+  showSick,
+  onSetDayStatus,
+  trigger,
+  tooltip,
+  children,
+}: {
+  employee: Employee
+  day: DayIndex
+  status: DayStatus
+  showSick: boolean
+  onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
+  trigger: React.ReactElement
+  tooltip?: string
+  children?: ReactNode
+}) {
+  return (
+    <DropdownMenu>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger render={trigger}>{children}</TooltipTrigger>
+          <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <DropdownMenuTrigger render={trigger}>{children}</DropdownMenuTrigger>
+      )}
+      <DropdownMenuContent align="center" className="w-44" side="bottom" sideOffset={-24}>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            {employee.name.split(" ")[0]} · {DAY_NAMES[day]}
+          </DropdownMenuLabel>
+          {status === "off" && showSick && (
+            <DropdownMenuItem onClick={() => onSetDayStatus(employee.id, day, "sick")}>Mark as sick</DropdownMenuItem>
+          )}
+          {status === "sick" && (
+            <DropdownMenuItem onClick={() => onSetDayStatus(employee.id, day, "off")}>Mark as day off</DropdownMenuItem>
+          )}
+          <DropdownMenuItem onClick={() => onSetDayStatus(employee.id, day, null)}>
+            {status === "off" ? "Clear day off" : "Clear sick day"}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

@@ -153,6 +153,21 @@
   background-image: repeating-linear-gradient(123deg, rgba(246, 158, 9, 0.09) 0 6px, transparent 6px 10px);
 }
 
+/* OFF / Sick cells are buttons: a faint darken on hover, a focus ring for keyboards */
+.timelines .tl-day {
+  cursor: pointer;
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .timelines .tl-day:hover {
+    box-shadow: inset 0 0 0 999px rgba(13, 14, 19, 0.02);
+  }
+}
+.timelines .tl-day:focus-visible,
+.timelines .tl-day[data-popup-open] {
+  box-shadow: inset 0 0 0 999px rgba(13, 14, 19, 0.03), inset 0 0 0 2px var(--ring-focus);
+}
+
 /* Shift bar — accent tint over white, accent ring */
 .timelines .tl-bar {
   --tl-bar-bg: color-mix(in srgb, var(--tl-accent) 6%, #ffffff);
