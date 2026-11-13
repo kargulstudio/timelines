@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full`}
     >
-      <body className="h-full">
+      <body className="timelines h-full">
         <Providers>{children}</Providers>
       </body>
     </html>

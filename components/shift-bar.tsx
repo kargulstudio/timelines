@@ -1,14 +1,10 @@
 "use client"
 
-import type { CSSProperties } from "react"
-import { comingSoon } from "@/lib/prototype"
+import { useRef, useState, type CSSProperties } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DAYS, DAY_NAMES, type Employee, type Shift, type ShiftWarning } from "@/lib/data"
-
-export function shiftDays(shift: Shift) {
-  return shift.end - shift.start + 1
-}
+import { formatHours, shiftHours } from "@/lib/schedule"
 
 export function shiftDayRange(shift: Shift, long = false) {
   const names = long ? DAY_NAMES : DAYS
@@ -25,13 +21,17 @@ type ShiftBarProps = {
   flagged: boolean
   onRemove: (shift: Shift) => void
   onResolve: (shiftId: string) => void
+  /** open the shift editor anchored to this bar */
+  onEdit: (shift: Shift, anchor: HTMLElement) => void
 }
 
 /**
  * Figma shift bar (e.g. 1:10363): 30px, r-7, accent tint at 6% over white,
  * 1px accent ring at 14%, Inter Medium 14 centred. Placed on the CSS grid by day.
  */
-export function ShiftBar({ shift, employee, row, accent, warning, flagged, onRemove, onResolve }: ShiftBarProps) {
+export function ShiftBar({ shift, employee, row, accent, warning, flagged, onRemove, onResolve, onEdit }: ShiftBarProps) {
+  const [open, setOpen] = useState(false)
+  const barRef = useRef<HTMLButtonElement>(null)
   const style: CSSProperties & Record<"--tl-accent", string> = {
     "--tl-accent": accent,
     gridRow: row + 1,
@@ -42,14 +42,21 @@ export function ShiftBar({ shift, employee, row, accent, warning, flagged, onRem
     // runs into next week: hug the copy and let the grid edge clip it (as in Figma)
     ...(shift.continues ? { justifySelf: "start", width: "max-content", minWidth: "calc(100% - 7px)" } : {}),
   }
-  const totalHours = shift.hoursPerDay * shiftDays(shift)
+  const totalHours = shiftHours(shift)
+
+  function edit() {
+    setOpen(false)
+    if (barRef.current) onEdit(shift, barRef.current)
+  }
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger
           render={
             <PopoverTrigger
+              ref={barRef}
+              onDoubleClick={edit}
               className="tl-bar relative z-[3] flex h-[30px] items-center justify-center self-start overflow-hidden rounded-[7px] px-1.5 py-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--ring-focus)"
               style={style}
               data-flagged={flagged && warning ? warning.kind : undefined}
@@ -90,7 +97,7 @@ export function ShiftBar({ shift, employee, row, accent, warning, flagged, onRem
           </dd>
           <dt className="text-(--tl-fg-legend)">Total</dt>
           <dd className="text-(--tl-fg-strong) tabular-nums">
-            {totalHours} hrs · {shift.hoursPerDay} hrs/day
+            {formatHours(totalHours)} hrs · {formatHours(shift.hoursPerDay)} hrs/day
           </dd>
         </dl>
         {warning && (
@@ -113,7 +120,7 @@ export function ShiftBar({ shift, employee, row, accent, warning, flagged, onRem
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={() => comingSoon("Shift editor")}
+            onClick={edit}
             className="tl-press h-7 rounded-md bg-white px-2.5 text-[13px] font-medium tracking-[-0.01em] text-(--tl-fg-button) shadow-(--tl-shadow-chip)"
           >
             Edit shift

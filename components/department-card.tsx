@@ -35,8 +35,10 @@ type DepartmentCardProps = {
   addOpen: boolean
   onAddOpenChange: (open: boolean) => void
   onAddEmployee: (name: string, role: string) => void
+  hours: Map<string, number>
   onRemoveShift: (shift: Shift) => void
   onResolve: (shiftId: string) => void
+  onSaveShift: (next: Shift, prev?: Shift) => void
 }
 
 /** Figma 1:10044 / 1:10416 — department card: header, schedule table, legend. */
@@ -116,8 +118,10 @@ export function DepartmentCard(props: DepartmentCardProps) {
               highlight={props.highlight}
               newIds={props.newIds}
               emptyMessage={props.emptyMessage}
+              hours={props.hours}
               onRemoveShift={props.onRemoveShift}
               onResolve={props.onResolve}
+              onSaveShift={props.onSaveShift}
               employeeHeader={
                 <div className="flex w-60 shrink-0 items-center gap-2 p-3">
                   <span className="tl-plain flex-1 text-sm font-medium text-(--tl-fg-strong)">Employee</span>

@@ -5,6 +5,7 @@ import { addDays, format, isSameDay } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { comingSoon } from "@/lib/prototype"
+import { computeWarnings, formatHours, shiftHours, weeklyHours } from "@/lib/schedule"
 import {
   BASE_WEEK_START,
   CONNECTORS,
@@ -16,7 +17,6 @@ import {
   NAV_TOP,
   NAV_WORK,
   SHIFTS,
-  WARNINGS,
   type DepartmentId,
   type Employee,
   type LocationId,
@@ -40,6 +40,8 @@ export function TimelinesApp() {
   const [weekStart, setWeekStart] = useState(BASE_WEEK_START)
   const [employees, setEmployees] = useState<Employee[]>(EMPLOYEES)
   const [shifts, setShifts] = useState<Shift[]>(SHIFTS)
+  /** shifts created, moved or retimed — their warnings are re-checked instead of using the Figma copy */
+  const [touched, setTouched] = useState<Set<string>>(() => new Set())
   const [resolved, setResolved] = useState<Set<string>>(() => new Set())
   const [highlight, setHighlight] = useState<WarningKind | null>(null)
   const [published, setPublished] = useState(false)
@@ -66,11 +68,12 @@ export function TimelinesApp() {
   }, [])
 
   /* ------------------------------ warnings ------------------------------ */
+  const hours = useMemo(() => weeklyHours(employees, shifts), [employees, shifts])
+  // Only the base week (Sep 28 – Oct 4) is checked, as in Figma; sick days only exist there.
   const openWarnings = useMemo(() => {
     if (!isBaseWeek) return [] as ShiftWarning[]
-    const ids = new Set(shifts.map((s) => s.id))
-    return WARNINGS.filter((w) => ids.has(w.shiftId) && !resolved.has(w.shiftId))
-  }, [isBaseWeek, shifts, resolved])
+    return computeWarnings(employees, shifts, touched, hours, isBaseWeek).filter((w) => !resolved.has(w.shiftId))
+  }, [isBaseWeek, employees, shifts, touched, hours, resolved])
   const warningMap = useMemo(() => new Map(openWarnings.map((w) => [w.shiftId, w])), [openWarnings])
   const conflicts = openWarnings.filter((w) => w.kind === "conflict").length
   const overtime = openWarnings.filter((w) => w.kind === "overtime").length
@@ -132,6 +135,40 @@ export function TimelinesApp() {
     markDirty()
     toast(`Removed “${shift.title}”`, {
       action: { label: "Undo", onClick: () => setShifts((prev) => [...prev, shift]) },
+    })
+  }
+
+  function saveShift(next: Shift, prev?: Shift) {
+    const shift = prev ? next : { ...next, id: `sh-new-${nextId.current++}` }
+    const retimed =
+      !prev ||
+      prev.start !== shift.start ||
+      prev.end !== shift.end ||
+      prev.startTime !== shift.startTime ||
+      prev.endTime !== shift.endTime
+    setShifts((list) => (prev ? list.map((s) => (s.id === prev.id ? shift : s)) : [...list, shift]))
+    if (retimed) {
+      setTouched((t) => new Set(t).add(shift.id))
+      // an edited shift gets a fresh look from the warning checks
+      setResolved((r) => {
+        if (!r.has(shift.id)) return r
+        const n = new Set(r)
+        n.delete(shift.id)
+        return n
+      })
+    }
+    markDirty()
+    const first = employees.find((e) => e.id === shift.employeeId)?.name.split(" ")[0] ?? ""
+    toast(prev ? `Updated “${shift.title}”` : `Added “${shift.title}” for ${first}`, {
+      id: "shift-change",
+      description: `${formatHours(shiftHours(shift))} hrs this week`,
+      action: {
+        label: "Undo",
+        onClick: () =>
+          setShifts((list) =>
+            prev ? list.map((s) => (s.id === shift.id ? prev : s)) : list.filter((s) => s.id !== shift.id)
+          ),
+      },
     })
   }
 
@@ -219,7 +256,7 @@ export function TimelinesApp() {
                   (!q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q))
               )
               if (sort[d.id] === "name") rows = [...rows].sort((a, b) => a.name.localeCompare(b.name))
-              if (sort[d.id] === "hours") rows = [...rows].sort((a, b) => b.hours - a.hours)
+              if (sort[d.id] === "hours") rows = [...rows].sort((a, b) => (hours.get(b.id) ?? 0) - (hours.get(a.id) ?? 0))
               const ids = new Set(deptEmployees.map((e) => e.id))
               return (
                 <DepartmentCard
@@ -239,8 +276,10 @@ export function TimelinesApp() {
                   addOpen={addOpenFor === d.id}
                   onAddOpenChange={(open) => setAddOpenFor(open ? d.id : null)}
                   onAddEmployee={(name, role) => addEmployee(d.id, name, role)}
+                  hours={hours}
                   onRemoveShift={removeShift}
                   onResolve={(id) => resolveIds([id], "Warning resolved")}
+                  onSaveShift={saveShift}
                 />
               )
             })}

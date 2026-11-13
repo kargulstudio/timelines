@@ -58,7 +58,10 @@ export type Employee = {
   /** avatar image; null renders initials */
   avatar: string | null
   role: string
+  /** weekly hours shown in Figma for the seed schedule (live totals come from lib/schedule.ts) */
   hours: number
+  /** weekly hour limit used for overtime warnings (default 40) */
+  limit?: number
   departmentId: DepartmentId
   location: LocationId
   /** days off — hatched grey cell with an OFF chip */
@@ -69,12 +72,12 @@ export type Employee = {
 
 export const EMPLOYEES: Employee[] = [
   // Cook Department
-  { id: "leonard-kim", name: "Leonard Kim", avatar: "/figma/avatars/leonard-kim.png", role: "Regular Shift", hours: 35, departmentId: "cook", location: "downtown", off: [6], sick: [5] },
+  { id: "leonard-kim", name: "Leonard Kim", avatar: "/figma/avatars/leonard-kim.png", role: "Regular Shift", hours: 35, limit: 32, departmentId: "cook", location: "downtown", off: [6], sick: [5] },
   { id: "james-park", name: "James Park", avatar: "/figma/avatars/james-park.png", role: "Support Cook", hours: 25, departmentId: "cook", location: "harbor", off: [6], sick: [] },
   { id: "mina-choi", name: "Mina Choi", avatar: "/figma/avatars/mina-choi.png", role: "Evening Line Cook", hours: 20, departmentId: "cook", location: "downtown", off: [0, 2], sick: [] },
   { id: "david-lim", name: "David Lim", avatar: "/figma/avatars/david-lim.png", role: "Prep Cook", hours: 18, departmentId: "cook", location: "harbor", off: [], sick: [3, 4] },
   // Barista Division
-  { id: "sophie-tan", name: "Sophie Tan", avatar: "/figma/avatars/sophie-tan.png", role: "Senior Barista", hours: 34, departmentId: "barista", location: "downtown", off: [6], sick: [] },
+  { id: "sophie-tan", name: "Sophie Tan", avatar: "/figma/avatars/sophie-tan.png", role: "Senior Barista", hours: 34, limit: 32, departmentId: "barista", location: "downtown", off: [6], sick: [] },
   { id: "ryan-lee", name: "Ryan Lee", avatar: "/figma/avatars/ryan-lee.png", role: "Junior Barista", hours: 20, departmentId: "barista", location: "harbor", off: [1], sick: [0] },
   { id: "hannah-kim", name: "Hannah Kim", avatar: "/figma/avatars/hannah-kim.png", role: "Barista", hours: 25, departmentId: "barista", location: "downtown", off: [6], sick: [5] },
   { id: "david-park", name: "David Park", avatar: "/figma/avatars/david-park.svg", role: "Part-time Barista", hours: 15, departmentId: "barista", location: "harbor", off: [5], sick: [] },
