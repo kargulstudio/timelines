@@ -24,6 +24,7 @@ import {
   WORKSPACES,
   type NavItem,
 } from "@/lib/data"
+import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon } from "./figma-icon"
 
 type SidebarProps = {
@@ -79,7 +80,7 @@ export function Sidebar({ active, onNavigate, onCollapse }: SidebarProps) {
               ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => toast("Create workspace isn't part of this prototype")}>
+            <DropdownMenuItem onClick={() => comingSoon("Create workspace")}>
               Create workspace…
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -96,14 +97,14 @@ export function Sidebar({ active, onNavigate, onCollapse }: SidebarProps) {
               <TooltipContent>More</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end" className="w-48" sideOffset={8}>
-              <DropdownMenuItem onClick={() => toast("Workspace settings isn't part of this prototype")}>
+              <DropdownMenuItem onClick={() => comingSoon("Workspace settings")}>
                 Workspace settings
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => toast("Keyboard shortcuts: / search, Esc clear")}>
                 Keyboard shortcuts
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => toast("Signed out (prototype)")}>Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => comingSoon("Sign out")}>Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Tooltip>
@@ -118,7 +119,7 @@ export function Sidebar({ active, onNavigate, onCollapse }: SidebarProps) {
       {/* New timeline — 1:9830 */}
       <button
         type="button"
-        onClick={() => toast.success("New timeline created", { description: "Untitled timeline · Sep 28 – Oct 4" })}
+        onClick={() => comingSoon("New timeline")}
         className="tl-press mt-4 flex h-[30px] w-full shrink-0 items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-white pr-[11px] pl-2.5 shadow-(--tl-shadow-new)"
       >
         <span className="flex size-3.5 items-center justify-center">

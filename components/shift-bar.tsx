@@ -1,7 +1,7 @@
 "use client"
 
 import type { CSSProperties } from "react"
-import { toast } from "sonner"
+import { comingSoon } from "@/lib/prototype"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DAYS, DAY_NAMES, type Employee, type Shift, type ShiftWarning } from "@/lib/data"
@@ -113,7 +113,7 @@ export function ShiftBar({ shift, employee, row, accent, warning, flagged, onRem
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={() => toast("Shift editor isn't part of this prototype")}
+            onClick={() => comingSoon("Shift editor")}
             className="tl-press h-7 rounded-md bg-white px-2.5 text-[13px] font-medium tracking-[-0.01em] text-(--tl-fg-button) shadow-(--tl-shadow-chip)"
           >
             Edit shift

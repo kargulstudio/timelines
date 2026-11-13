@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { BASE_WEEK_START, DEPARTMENTS, LOCATIONS, type DepartmentId, type LocationId, type WarningKind } from "@/lib/data"
+import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon, VDivider } from "./figma-icon"
 
 /** Shared recipe for the white 30px toolbar controls (Figma: p-8, r-7, soft ring). */
@@ -113,11 +114,7 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
               <TooltipTrigger
                 className="tl-icon-btn size-3.5"
                 aria-label="Copy last week's schedule"
-                onClick={() =>
-                  toast.success("Copied last week's schedule", {
-                    description: `${format(addWeeks(weekStart, -1), "MMM d")} → ${format(weekStart, "MMM d")}`,
-                  })
-                }
+                onClick={() => comingSoon("Copy last week")}
               >
                 <FigmaIcon src="/figma/icons/copy-06.svg" />
               </TooltipTrigger>

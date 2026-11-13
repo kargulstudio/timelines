@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { toast } from "sonner"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
@@ -14,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { Connector, Department, Employee, Shift, ShiftWarning, WarningKind } from "@/lib/data"
+import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon, VDivider } from "./figma-icon"
 import { ScheduleGrid } from "./schedule-grid"
 
@@ -69,7 +69,7 @@ export function DepartmentCard(props: DepartmentCardProps) {
             <TooltipTrigger
               className="tl-icon-btn size-3.5"
               aria-label={`Edit ${department.name}`}
-              onClick={() => toast(`Editing ${department.name} isn't part of this prototype`)}
+              onClick={() => comingSoon("Department editing")}
             >
               <FigmaIcon src="/figma/icons/edit-03.svg" />
             </TooltipTrigger>

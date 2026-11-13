@@ -1,7 +1,6 @@
 "use client"
 
 import type { Ref } from "react"
-import { toast } from "sonner"
 import { XIcon } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon, VDivider } from "./figma-icon"
 
 type TopBarProps = {
@@ -106,12 +106,12 @@ export function TopBar({
               Employee
               <DropdownMenuShortcut>E</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast("Shift templates aren't part of this prototype")}>Shift</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast("Add department isn't part of this prototype")}>
+            <DropdownMenuItem onClick={() => comingSoon("Shift templates")}>Shift</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => comingSoon("Add department")}>
               Department
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => toast("Import isn't part of this prototype")}>Import from CSV…</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => comingSoon("Import from CSV")}>Import from CSV…</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -155,7 +155,7 @@ export function TopBar({
             <TooltipTrigger
               className="tl-icon-btn size-3.5"
               aria-label="Inbox"
-              onClick={() => toast("Inbox is empty", { description: "Shift requests will show up here." })}
+              onClick={() => comingSoon("Inbox")}
             >
               <FigmaIcon src="/figma/icons/inbox-01.svg" />
             </TooltipTrigger>

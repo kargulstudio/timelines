@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { addDays, format, isSameDay } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { comingSoon } from "@/lib/prototype"
 import {
   BASE_WEEK_START,
   CONNECTORS,
@@ -27,13 +28,11 @@ import { Sidebar } from "./sidebar"
 import { TopBar } from "./top-bar"
 import { ScheduleToolbar } from "./schedule-toolbar"
 import { DepartmentCard, type SortMode } from "./department-card"
-import { FigmaIcon } from "./figma-icon"
 
 const ALL_NAV = [...NAV_TOP, ...NAV_MAIN, ...NAV_REPORTS_CHILDREN, ...NAV_WORK, ...NAV_FOOTER]
 
 /** Figma 1:9814 — "Business scheduling platform" (1440×1024). */
 export function TimelinesApp() {
-  const [active, setActive] = useState("timelines")
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [query, setQuery] = useState("")
   const [location, setLocation] = useState<LocationId | "all">("all")
@@ -59,7 +58,6 @@ export function TimelinesApp() {
       const t = e.target as HTMLElement | null
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return
       e.preventDefault()
-      setActive("timelines")
       searchRef.current?.focus()
       searchRef.current?.select()
     }
@@ -157,16 +155,20 @@ export function TimelinesApp() {
     toast.success(`${name} added to ${DEPARTMENTS.find((d) => d.id === dept)!.name}`)
   }
 
+  // Only Timelines exists in this prototype; every other destination says so.
+  function navigate(id: string) {
+    if (id === "timelines") return
+    comingSoon(ALL_NAV.find((n) => n.id === id)?.label ?? "This page")
+  }
+
   /* ------------------------------ filtering ----------------------------- */
   const q = query.trim().toLowerCase()
   const visibleDepartments = DEPARTMENTS.filter((d) => department === "all" || d.id === department)
 
-  const nav = ALL_NAV.find((n) => n.id === active)
-
   return (
     <div className="timelines flex h-dvh min-h-0 overflow-hidden bg-(--tl-shell)">
       {!sidebarCollapsed && (
-        <Sidebar active={active} onNavigate={setActive} onCollapse={() => setSidebarCollapsed(true)} />
+        <Sidebar active="timelines" onNavigate={navigate} onCollapse={() => setSidebarCollapsed(true)} />
       )}
 
       <main
@@ -179,95 +181,70 @@ export function TimelinesApp() {
           <TopBar
             inputRef={searchRef}
             query={query}
-            onQueryChange={(v) => {
-              setQuery(v)
-              if (active !== "timelines") setActive("timelines")
-            }}
-            onAddEmployee={() => {
-              setActive("timelines")
-              setAddOpenFor(visibleDepartments[0]?.id ?? "cook")
-            }}
+            onQueryChange={setQuery}
+            onAddEmployee={() => setAddOpenFor(visibleDepartments[0]?.id ?? "cook")}
             sidebarCollapsed={sidebarCollapsed}
             onExpandSidebar={() => setSidebarCollapsed(false)}
           />
 
-          {active === "timelines" ? (
-            <>
-              <div className="mt-8">
-                <ScheduleToolbar
-                  weekStart={weekStart}
-                  onWeekChange={(d) => {
-                    setWeekStart(d)
-                    setHighlight(null)
-                    markDirty()
-                  }}
-                  conflicts={conflicts}
-                  overtime={overtime}
-                  highlight={effectiveHighlight}
-                  onHighlight={setHighlight}
-                  onFixWarnings={fixAll}
-                  published={published}
-                  onPublish={publish}
-                  location={location}
-                  onLocationChange={setLocation}
-                  department={department}
-                  onDepartmentChange={setDepartment}
-                />
-              </div>
+          <div className="mt-8">
+            <ScheduleToolbar
+              weekStart={weekStart}
+              onWeekChange={(d) => {
+                setWeekStart(d)
+                setHighlight(null)
+                markDirty()
+              }}
+              conflicts={conflicts}
+              overtime={overtime}
+              highlight={effectiveHighlight}
+              onHighlight={setHighlight}
+              onFixWarnings={fixAll}
+              published={published}
+              onPublish={publish}
+              location={location}
+              onLocationChange={setLocation}
+              department={department}
+              onDepartmentChange={setDepartment}
+            />
+          </div>
 
-              <div className="mt-5 flex flex-col gap-5">
-                {visibleDepartments.map((d) => {
-                  const deptEmployees = employees.filter((e) => e.departmentId === d.id)
-                  const defaultOrder = deptEmployees.map((e) => e.id)
-                  let rows = deptEmployees.filter(
-                    (e) =>
-                      (location === "all" || e.location === location) &&
-                      (!q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q))
-                  )
-                  if (sort[d.id] === "name") rows = [...rows].sort((a, b) => a.name.localeCompare(b.name))
-                  if (sort[d.id] === "hours") rows = [...rows].sort((a, b) => b.hours - a.hours)
-                  const ids = new Set(deptEmployees.map((e) => e.id))
-                  return (
-                    <DepartmentCard
-                      key={d.id}
-                      department={d}
-                      employees={rows}
-                      defaultOrder={defaultOrder}
-                      shifts={shifts.filter((s) => ids.has(s.employeeId))}
-                      connectors={CONNECTORS}
-                      showSick={isBaseWeek}
-                      warnings={warningMap}
-                      highlight={effectiveHighlight}
-                      newIds={newIds}
-                      emptyMessage={q ? `No employees match “${query.trim()}”` : "No employees at this location"}
-                      sort={sort[d.id]}
-                      onSortChange={(s) => setSort((prev) => ({ ...prev, [d.id]: s }))}
-                      addOpen={addOpenFor === d.id}
-                      onAddOpenChange={(open) => setAddOpenFor(open ? d.id : null)}
-                      onAddEmployee={(name, role) => addEmployee(d.id, name, role)}
-                      onRemoveShift={removeShift}
-                      onResolve={(id) => resolveIds([id], "Warning resolved")}
-                    />
-                  )
-                })}
-              </div>
-            </>
-          ) : (
-            <div className="tl-enter flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
-              {nav && <FigmaIcon src={nav.icon} size={20} />}
-              <p className="text-base font-medium text-(--tl-fg-strong)">{nav?.label ?? "This page"}</p>
-              <p className="max-w-72 text-sm leading-[1.4] text-(--tl-fg-legend)">
-                Only Timelines is built in this prototype.
-              </p>
-              <button
-                type="button"
-                onClick={() => setActive("timelines")}
-                className="tl-press mt-1 h-[30px] rounded-[7px] bg-white px-3 text-sm font-medium text-(--tl-fg-button) shadow-(--tl-shadow-card)"
-              >
-                Back to Timelines
-              </button>
-            </div>
-          )}
+          <div className="mt-5 flex flex-col gap-5">
+            {visibleDepartments.map((d) => {
+              const deptEmployees = employees.filter((e) => e.departmentId === d.id)
+              const defaultOrder = deptEmployees.map((e) => e.id)
+              let rows = deptEmployees.filter(
+                (e) =>
+                  (location === "all" || e.location === location) &&
+                  (!q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q))
+              )
+              if (sort[d.id] === "name") rows = [...rows].sort((a, b) => a.name.localeCompare(b.name))
+              if (sort[d.id] === "hours") rows = [...rows].sort((a, b) => b.hours - a.hours)
+              const ids = new Set(deptEmployees.map((e) => e.id))
+              return (
+                <DepartmentCard
+                  key={d.id}
+                  department={d}
+                  employees={rows}
+                  defaultOrder={defaultOrder}
+                  shifts={shifts.filter((s) => ids.has(s.employeeId))}
+                  connectors={CONNECTORS}
+                  showSick={isBaseWeek}
+                  warnings={warningMap}
+                  highlight={effectiveHighlight}
+                  newIds={newIds}
+                  emptyMessage={q ? `No employees match “${query.trim()}”` : "No employees at this location"}
+                  sort={sort[d.id]}
+                  onSortChange={(s) => setSort((prev) => ({ ...prev, [d.id]: s }))}
+                  addOpen={addOpenFor === d.id}
+                  onAddOpenChange={(open) => setAddOpenFor(open ? d.id : null)}
+                  onAddEmployee={(name, role) => addEmployee(d.id, name, role)}
+                  onRemoveShift={removeShift}
+                  onResolve={(id) => resolveIds([id], "Warning resolved")}
+                />
+              )
+            })}
+          </div>
         </div>
       </main>
     </div>
