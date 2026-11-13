@@ -24,9 +24,9 @@ import {
   type ShiftWarning,
   type WarningKind,
 } from "@/lib/data"
-import { formatHours, type DayStatus } from "@/lib/schedule"
+import { formatHours, placementProblem, type DayStatus } from "@/lib/schedule"
 import { FigmaIcon, VDivider } from "./figma-icon"
-import { ShiftBar } from "./shift-bar"
+import { ShiftBar, shiftDayRange } from "./shift-bar"
 import { SECONDARY_BTN, ShiftEditor, type EditorTarget } from "./shift-editor"
 
 /** Row pitch (Figma: rules every 85px). The last row is clipped to 76px like the Figma frame. */
@@ -63,8 +63,8 @@ type ScheduleGridProps = {
   employeeHeader: ReactNode
   onRemoveShift: (shift: Shift) => void
   onResolve: (shiftId: string) => void
-  /** create (prev undefined) or update a shift */
-  onSaveShift: (next: Shift, prev?: Shift) => void
+  /** create (prev undefined) or update a shift; `message` overrides the toast copy */
+  onSaveShift: (next: Shift, prev?: Shift, message?: string) => void
   /** mark a day off / sick, or clear it back to empty (null) */
   onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
 }
@@ -115,7 +115,7 @@ export function ScheduleGrid({
 
   /* ---------------------------- connectors ---------------------------- */
   const figmaConnectors: { c: Connector; anchor: Shift; row: number }[] = []
-  const liveConnectors: { c: Connector; d: string; ax: number; ay: number; bx: number; by: number }[] = []
+  const liveConnectors: ({ c: Connector } & ReturnType<typeof linkPath>)[] = []
   for (const c of connectors) {
     const from = shiftById.get(c.fromShiftId)
     const to = shiftById.get(c.toShiftId)
@@ -131,16 +131,9 @@ export function ScheduleGrid({
       figmaConnectors.push({ c, anchor, row: rowOf.get(anchor.employeeId)! })
       continue
     }
-    // re-placed from the live data: a bracket curve between the bars' left edges
+    // re-placed from the live data
     if (!gridWidth) continue
-    const col = gridWidth / 7
-    const ax = from.start * col + 7
-    const bx = to.start * col + 7
-    const ay = BAR_MID + rf * ROW
-    const by = BAR_MID + rt * ROW
-    const k = Math.max(22, Math.abs(by - ay) * 0.32)
-    const x = Math.min(ax, bx) - k
-    liveConnectors.push({ c, ax, ay, bx, by, d: `M ${ax - 1} ${ay} C ${x} ${ay}, ${x} ${by}, ${bx - 7} ${by}` })
+    liveConnectors.push({ c, ...linkPath(from, to, rf, rt, gridWidth) })
   }
 
   return (
@@ -275,6 +268,22 @@ export function ScheduleGrid({
                 onRemove={onRemoveShift}
                 onResolve={onResolve}
                 onEdit={(shift, anchor) => openEditor({ kind: "edit", shift }, anchor)}
+                canPlace={(shift, start, end) =>
+                  !placementProblem(byId.get(shift.employeeId)!, shifts, start, end, {
+                    ignoreShiftId: shift.id,
+                    showSick,
+                  })
+                }
+                onMove={(shift, start, end) => {
+                  const next: Shift = {
+                    ...shift,
+                    start: start as DayIndex,
+                    end: end as DayIndex,
+                    continues: shift.continues && end === 6 ? true : undefined,
+                  }
+                  const verb = start !== shift.start && end !== shift.end && end - start === shift.end - shift.start ? "Moved" : "Resized"
+                  onSaveShift(next, shift, `${verb} “${shift.title}” to ${shiftDayRange(next)}`)
+                }}
               />
             )
           })}
@@ -310,13 +319,13 @@ export function ScheduleGrid({
               className="tl-connector pointer-events-none absolute inset-0 z-[4] size-full overflow-visible"
               fill="none"
             >
-              {liveConnectors.map(({ c, d, ax, ay, bx, by }) => (
-                <g key={c.id} stroke={department.accent} fill={department.accent}>
-                  <path d={d} strokeWidth={1.4} fill="none" />
+              {liveConnectors.map(({ c, d, a, b, dir }) => (
+                <g key={c.id} fill={department.accent}>
+                  <path d={d} stroke={department.accent} strokeWidth={1.4} fill="none" />
                   {c.kind === "switch" ? (
-                    <circle cx={ax - 1} cy={ay} r={3.2} stroke="none" />
+                    <circle cx={a.x} cy={a.y} r={3.2} />
                   ) : (
-                    <path d={`M ${bx} ${by} L ${bx - 7} ${by - 4} L ${bx - 7} ${by + 4} Z`} stroke="none" />
+                    <path d={`M ${b.x} ${b.y} L ${b.x - 7 * dir} ${b.y - 4} L ${b.x - 7 * dir} ${b.y + 4} Z`} />
                   )}
                 </g>
               ))}
@@ -551,6 +560,38 @@ function Avatar({ employee }: { employee: Employee }) {
       {initials}
     </span>
   )
+}
+
+/**
+ * A link between two bars drawn from their current positions: an S-curve
+ * between facing edges when the bars sit side by side, or a bracket on the
+ * free side when their days overlap. `dir` is the arrow direction at `b`.
+ */
+function linkPath(from: Shift, to: Shift, rowFrom: number, rowTo: number, width: number) {
+  const col = width / 7
+  const left = (s: Shift) => s.start * col + 7
+  const right = (s: Shift) => Math.min((s.end + 1) * col - 10, width - 2)
+  const ya = BAR_MID + rowFrom * ROW
+  const yb = BAR_MID + rowTo * ROW
+  if (from.end < to.start || to.end < from.start) {
+    const toRight = from.end < to.start
+    const a = { x: toRight ? right(from) : left(from), y: ya }
+    const b = { x: toRight ? left(to) : right(to), y: yb }
+    const mid = (a.x + b.x) / 2
+    return { a, b, dir: toRight ? 1 : -1, d: `M ${a.x} ${a.y} C ${mid} ${a.y}, ${mid} ${b.y}, ${b.x} ${b.y}` }
+  }
+  const k = Math.max(22, Math.abs(yb - ya) * 0.32)
+  const onLeft = Math.min(from.start, to.start) > 0
+  if (onLeft) {
+    const a = { x: left(from), y: ya }
+    const b = { x: left(to), y: yb }
+    const x = Math.min(a.x, b.x) - k
+    return { a, b, dir: 1, d: `M ${a.x} ${a.y} C ${x} ${a.y}, ${x} ${b.y}, ${b.x} ${b.y}` }
+  }
+  const a = { x: right(from), y: ya }
+  const b = { x: right(to), y: yb }
+  const x = Math.max(a.x, b.x) + k
+  return { a, b, dir: -1, d: `M ${a.x} ${a.y} C ${x} ${a.y}, ${x} ${b.y}, ${b.x} ${b.y}` }
 }
 
 /** Width of an element, kept current with a ResizeObserver (0 until mounted). */

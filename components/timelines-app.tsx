@@ -140,7 +140,7 @@ export function TimelinesApp() {
     })
   }
 
-  function saveShift(next: Shift, prev?: Shift) {
+  function saveShift(next: Shift, prev?: Shift, message?: string) {
     const shift = prev ? next : { ...next, id: `sh-new-${nextId.current++}` }
     const retimed =
       !prev ||
@@ -161,7 +161,7 @@ export function TimelinesApp() {
     }
     markDirty()
     const first = employees.find((e) => e.id === shift.employeeId)?.name.split(" ")[0] ?? ""
-    toast(prev ? `Updated “${shift.title}”` : `Added “${shift.title}” for ${first}`, {
+    toast(message ?? (prev ? `Updated “${shift.title}”` : `Added “${shift.title}” for ${first}`), {
       id: "shift-change",
       description: `${formatHours(shiftHours(shift))} hrs this week`,
       action: {

@@ -196,6 +196,57 @@
   --tl-bar-ring: rgba(242, 49, 69, 0.55);
   color: var(--tl-danger);
 }
+/* Drag: the bar lifts while it follows the pointer; edges resize */
+.timelines .tl-bar {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.timelines .tl-bar[data-dragging] {
+  z-index: 5;
+  cursor: grabbing;
+  --tl-bar-bg: color-mix(in srgb, var(--tl-accent) 10%, #ffffff);
+  --tl-bar-ring: color-mix(in srgb, var(--tl-accent) 45%, transparent);
+  box-shadow: 0px 0px 0px 1px var(--tl-bar-ring), 0px 6px 16px -6px rgba(20, 20, 20, 0.22);
+}
+.timelines .tl-bar[data-dragging="start"],
+.timelines .tl-bar[data-dragging="end"] {
+  cursor: ew-resize;
+}
+.timelines .tl-bar-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+.timelines .tl-bar-handle::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--tl-accent) 45%, transparent);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .timelines .tl-bar:hover .tl-bar-handle::after {
+    opacity: 1;
+  }
+}
+.timelines .tl-bar:focus-visible .tl-bar-handle::after,
+.timelines .tl-bar[data-dragging] .tl-bar-handle::after {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .timelines .tl-bar-handle {
+    width: 14px;
+  }
+}
+
 .timelines [data-highlight] .tl-bar:not([data-flagged]) {
   opacity: 0.4;
 }

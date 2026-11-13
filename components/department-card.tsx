@@ -39,7 +39,7 @@ type DepartmentCardProps = {
   hours: Map<string, number>
   onRemoveShift: (shift: Shift) => void
   onResolve: (shiftId: string) => void
-  onSaveShift: (next: Shift, prev?: Shift) => void
+  onSaveShift: (next: Shift, prev?: Shift, message?: string) => void
   onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
 }
 
