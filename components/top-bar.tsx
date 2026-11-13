@@ -161,7 +161,7 @@ export function TopBar({
               Employee
               <DropdownMenuShortcut>E</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => comingSoon("Shift templates")}>Shift</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => comingSoon("Shift templates")}>Shift template</DropdownMenuItem>
             <DropdownMenuItem onClick={() => comingSoon("Add department")}>
               Department
             </DropdownMenuItem>
