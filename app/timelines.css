@@ -1,0 +1,227 @@
+/*
+ * Timelines — app tokens + recipes.
+ * Source: Figma "Business scheduling platform" (ZKxOvLKOz4VYG21iEqjG4l, node 1:9814).
+ * Everything is scoped under `.timelines` so other routes are unaffected.
+ */
+
+.timelines {
+  /* Surfaces */
+  --tl-shell: #f5f5f5; /* app background + sidebar + table header */
+  --tl-panel: #ffffff;
+  --tl-nav-active: #e9e9e9;
+  --tl-nav-hover: rgba(13, 14, 19, 0.04);
+  --tl-kbd: #f9f9f9;
+
+  /* Text */
+  --tl-fg-strong: #090909; /* names, card titles, column header "Employee" */
+  --tl-fg-nav: #0d0e13;
+  --tl-fg-workspace: #161513;
+  --tl-fg-button: #232323;
+  --tl-fg-ink: #141414;
+  --tl-fg-body: rgba(35, 35, 35, 0.9); /* chips, toolbar copy */
+  --tl-fg-day: #727170;
+  --tl-fg-legend: #7c7c7c;
+  --tl-fg-link: rgba(124, 124, 124, 0.9);
+  --tl-fg-placeholder: #9b9b9b;
+
+  /* Lines */
+  --tl-line: rgba(230, 230, 230, 0.6); /* table grid */
+  --tl-divider: #e6e6e6; /* 1×16 vertical dividers */
+  --tl-rule: #ececec; /* sidebar section rules */
+  --tl-ring: #e7e7e7; /* chips, cards */
+
+  /* Status */
+  --tl-danger: rgba(242, 49, 69, 0.9);
+  --tl-danger-bg: rgba(242, 49, 69, 0.06);
+  --tl-danger-ring: rgba(245, 95, 111, 0.14);
+  --tl-sick: #f69e09;
+  --tl-brand: #ff6400;
+  --tl-publish: #232323;
+
+  /* Elevation (exact Figma values) */
+  --tl-shadow-panel: 0px 0px 4px 0px rgba(20, 20, 20, 0.08), 0px 0px 0px 1px #ebebeb;
+  --tl-shadow-card: 0px 2px 4px 0px rgba(35, 35, 35, 0.03), 0px 1px 2px 0px rgba(35, 35, 35, 0.04),
+    0px 0px 0px 1px var(--tl-ring);
+  --tl-shadow-field: 0px 2px 4px -2px rgba(20, 20, 20, 0.25), 0px 0px 0px 1px #ebebeb;
+  --tl-shadow-chip: 0px 0px 0px 1px var(--tl-ring);
+  --tl-shadow-new: 0px 0px 0px 1px #e6e6e6;
+
+  /* Schedule geometry (Figma: 85px row pitch, 30px bars 27px below the row rule) */
+  --tl-row: 85px;
+
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  color: var(--tl-fg-strong);
+}
+
+/* Text layers Figma renders without the "salt" alternates (names, titles, Geist nav) */
+.timelines .tl-plain {
+  font-feature-settings: normal;
+}
+
+/* ---------------------------------------------------------------------------
+ * Pressable recipes (no scale / bounce — colour + shadow only)
+ * ------------------------------------------------------------------------ */
+.timelines .tl-press {
+  cursor: pointer;
+  transition-property: background-color, box-shadow, color, opacity;
+  transition-duration: var(--duration-press);
+  transition-timing-function: var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) and (pointer: fine) {
+  .timelines .tl-press:hover {
+    background-color: #fafafa;
+  }
+  .timelines .tl-press-ghost:hover {
+    background-color: var(--tl-nav-hover);
+  }
+  .timelines .tl-press-dark:hover {
+    background-color: #353535;
+  }
+  .timelines .tl-press-danger:hover {
+    background-color: rgba(242, 49, 69, 0.1);
+  }
+}
+.timelines .tl-press:active,
+.timelines .tl-press[data-popup-open] {
+  background-color: #f5f5f5;
+}
+.timelines .tl-press-ghost:active,
+.timelines .tl-press-ghost[data-popup-open] {
+  background-color: rgba(13, 14, 19, 0.07);
+}
+.timelines .tl-press-dark:active {
+  background-color: #111111;
+}
+.timelines .tl-press-danger:active,
+.timelines .tl-press-danger[aria-pressed="true"] {
+  background-color: rgba(242, 49, 69, 0.12);
+  box-shadow: 0px 0px 0px 1px rgba(242, 49, 69, 0.4);
+}
+
+/* Small square icon hit-area that keeps the 14px glyph at its Figma spot */
+.timelines .tl-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color var(--duration-press) var(--ease-out);
+}
+.timelines .tl-icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 6px;
+  transition: background-color var(--duration-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .timelines .tl-icon-btn:hover::before {
+    background-color: rgba(13, 14, 19, 0.05);
+  }
+}
+.timelines .tl-icon-btn:active::before,
+.timelines .tl-icon-btn[data-popup-open]::before,
+.timelines .tl-icon-btn[aria-pressed="true"]::before {
+  background-color: rgba(13, 14, 19, 0.08);
+}
+.timelines .tl-icon-btn > img {
+  position: relative;
+}
+
+/* ---------------------------------------------------------------------------
+ * Schedule grid
+ * ------------------------------------------------------------------------ */
+
+/* Row track: 1px rule at the top + dashed timeline at the row centre (5 on / 5 off) */
+.timelines .tl-row-track {
+  box-shadow: inset 0 1px 0 var(--tl-line);
+  background-image: linear-gradient(to right, var(--tl-line) 0 5px, transparent 5px 10px);
+  background-size: 10px 1px;
+  background-repeat: repeat-x;
+  background-position: 0.5px 42px;
+}
+
+/* Unavailable cells: 6px stripes, 4px gap, rotated 33° */
+.timelines .tl-hatch-off {
+  background-color: #fbfbfb;
+  background-image: repeating-linear-gradient(123deg, #f2f2f2 0 6px, transparent 6px 10px);
+}
+.timelines .tl-hatch-sick {
+  background-color: #ffffff;
+  background-image: repeating-linear-gradient(123deg, rgba(246, 158, 9, 0.09) 0 6px, transparent 6px 10px);
+}
+
+/* Shift bar — accent tint over white, accent ring */
+.timelines .tl-bar {
+  --tl-bar-bg: color-mix(in srgb, var(--tl-accent) 6%, #ffffff);
+  --tl-bar-ring: color-mix(in srgb, var(--tl-accent) 14%, transparent);
+  background-color: var(--tl-bar-bg);
+  box-shadow: 0px 0px 0px 1px var(--tl-bar-ring);
+  color: var(--tl-accent);
+  cursor: pointer;
+  transition-property: background-color, box-shadow, opacity, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .timelines .tl-bar:hover {
+    --tl-bar-bg: color-mix(in srgb, var(--tl-accent) 10%, #ffffff);
+    --tl-bar-ring: color-mix(in srgb, var(--tl-accent) 28%, transparent);
+  }
+}
+.timelines .tl-bar[data-popup-open] {
+  --tl-bar-bg: color-mix(in srgb, var(--tl-accent) 12%, #ffffff);
+  --tl-bar-ring: color-mix(in srgb, var(--tl-accent) 45%, transparent);
+}
+.timelines .tl-bar[data-flagged="conflict"],
+.timelines .tl-bar[data-flagged="overtime"] {
+  --tl-bar-bg: #fff5f6;
+  --tl-bar-ring: rgba(242, 49, 69, 0.55);
+  color: var(--tl-danger);
+}
+.timelines [data-highlight] .tl-bar:not([data-flagged]) {
+  opacity: 0.4;
+}
+
+/* Connectors fade with their shifts when a warning filter dims the grid */
+.timelines .tl-connector {
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+.timelines [data-highlight] .tl-connector {
+  opacity: 0.3;
+}
+
+/* Collapsible regions (card body, Reports group): animate grid rows, not height */
+.timelines .tl-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--duration-slow) var(--ease-out);
+}
+.timelines .tl-collapse[data-collapsed] {
+  grid-template-rows: 0fr;
+}
+.timelines .tl-collapse > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Entrance for newly added rows (rare → allowed to animate) */
+.timelines .tl-enter {
+  animation: tl-enter var(--duration-slow) var(--ease-out) both;
+}
+@keyframes tl-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Thin scrollbar on the main panel */
+.timelines .tl-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d9d9d9 transparent;
+}
