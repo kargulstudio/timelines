@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { Connector, DayIndex, Department, Employee, Shift, ShiftWarning, WarningKind } from "@/lib/data"
 import type { DayStatus } from "@/lib/schedule"
-import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon, VDivider } from "./figma-icon"
 import { ScheduleGrid } from "./schedule-grid"
 
@@ -41,6 +40,8 @@ type DepartmentCardProps = {
   onResolve: (shiftId: string) => void
   onSaveShift: (next: Shift, prev?: Shift, message?: string) => void
   onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
+  onRename: (name: string) => void
+  onRemoveEmployee: (employee: Employee) => void
 }
 
 /** Figma 1:10044 / 1:10416 — department card: header, schedule table, legend. */
@@ -48,6 +49,7 @@ export function DepartmentCard(props: DepartmentCardProps) {
   const { department, sort, onSortChange, addOpen, onAddOpenChange, onAddEmployee } = props
   const [collapsed, setCollapsed] = useState(false)
   const [showLinks, setShowLinks] = useState(true)
+  const [renaming, setRenaming] = useState(false)
   const bodyId = `tl-card-${department.id}`
 
   return (
@@ -64,20 +66,37 @@ export function DepartmentCard(props: DepartmentCardProps) {
           >
             <FigmaIcon src={department.icon} size={10} className="absolute top-[3px] left-[3px]" />
           </span>
-          <h2 id={`${bodyId}-title`} className="tl-plain min-w-0 flex-1 truncate text-sm font-medium text-(--tl-fg-strong)">
-            {department.name}
-          </h2>
+          {renaming ? (
+            <RenameField
+              name={department.name}
+              onDone={(name) => {
+                setRenaming(false)
+                if (name) props.onRename(name)
+              }}
+            />
+          ) : (
+            <h2
+              id={`${bodyId}-title`}
+              onDoubleClick={() => setRenaming(true)}
+              className="tl-plain min-w-0 flex-1 truncate text-sm font-medium text-(--tl-fg-strong)"
+            >
+              {department.name}
+            </h2>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger
               className="tl-icon-btn size-3.5"
-              aria-label={`Edit ${department.name}`}
-              onClick={() => comingSoon("Department editing")}
+              aria-label={`Rename ${department.name}`}
+              aria-pressed={renaming}
+              // keep focus in the field while it's open, so the click doesn't blur-save and reopen
+              onPointerDown={(e) => renaming && e.preventDefault()}
+              onClick={() => setRenaming(true)}
             >
               <FigmaIcon src="/figma/icons/edit-03.svg" />
             </TooltipTrigger>
-            <TooltipContent>Edit department</TooltipContent>
+            <TooltipContent>Rename department</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger
@@ -125,6 +144,7 @@ export function DepartmentCard(props: DepartmentCardProps) {
               onResolve={props.onResolve}
               onSaveShift={props.onSaveShift}
               onSetDayStatus={props.onSetDayStatus}
+              onRemoveEmployee={props.onRemoveEmployee}
               employeeHeader={
                 <div className="flex w-60 shrink-0 items-center gap-2 p-3">
                   <span className="tl-plain flex-1 text-sm font-medium text-(--tl-fg-strong)">Employee</span>
@@ -179,6 +199,36 @@ export function DepartmentCard(props: DepartmentCardProps) {
         </div>
       </div>
     </section>
+  )
+}
+
+/** Inline rename in the card header: Enter or blur saves, Esc cancels. */
+function RenameField({ name, onDone }: { name: string; onDone: (name: string | null) => void }) {
+  const [value, setValue] = useState(name)
+  const done = useRef(false)
+  const finish = (v: string | null) => {
+    if (done.current) return
+    done.current = true
+    onDone(v?.trim() || null)
+  }
+  return (
+    <input
+      autoFocus
+      value={value}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => finish(value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") finish(value)
+        if (e.key === "Escape") {
+          e.stopPropagation()
+          finish(null)
+        }
+      }}
+      aria-label="Department name"
+      maxLength={60}
+      className="tl-plain -my-1 -ml-1 h-6 min-w-0 flex-1 rounded-[5px] bg-white px-1 text-sm font-medium text-(--tl-fg-strong) shadow-[0px_0px_0px_1px_#d4d4d4,0px_0px_0px_3px_rgba(16,103,255,0.14)] outline-none"
+    />
   )
 }
 

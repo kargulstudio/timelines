@@ -17,7 +17,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { BASE_WEEK_START, DEPARTMENTS, LOCATIONS, type DepartmentId, type LocationId, type WarningKind } from "@/lib/data"
+import { BASE_WEEK_START, LOCATIONS, type Department, type DepartmentId, type LocationId, type WarningKind } from "@/lib/data"
 import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon, VDivider } from "./figma-icon"
 
@@ -39,6 +39,8 @@ type ScheduleToolbarProps = {
   onLocationChange: (l: LocationId | "all") => void
   department: DepartmentId | "all"
   onDepartmentChange: (d: DepartmentId | "all") => void
+  /** live departments (names can be edited) */
+  departments: Department[]
 }
 
 /** Figma 1:9974 — date range, shift warnings, publish; dashed rule; filters + feedback. */
@@ -57,11 +59,12 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
     onLocationChange,
     department,
     onDepartmentChange,
+    departments,
   } = props
   const hasWarnings = conflicts + overtime > 0
   const locationLabel = location === "all" ? "Acme Inc." : LOCATIONS.find((l) => l.id === location)!.name
   const departmentLabel =
-    department === "all" ? "All Departments" : DEPARTMENTS.find((d) => d.id === department)!.name
+    department === "all" ? "All Departments" : departments.find((d) => d.id === department)!.name
 
   return (
     <div className="flex flex-col gap-[11px]">
@@ -194,7 +197,7 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
                   onValueChange={(v) => onDepartmentChange(v as DepartmentId | "all")}
                 >
                   <DropdownMenuRadioItem value="all">All Departments</DropdownMenuRadioItem>
-                  {DEPARTMENTS.map((d) => (
+                  {departments.map((d) => (
                     <DropdownMenuRadioItem key={d.id} value={d.id}>
                       <span className="size-2 rounded-full" style={{ backgroundColor: d.accent }} />
                       {d.name}

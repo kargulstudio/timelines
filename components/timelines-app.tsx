@@ -19,6 +19,7 @@ import {
   NAV_WORK,
   SHIFTS,
   type DayIndex,
+  type Department,
   type DepartmentId,
   type Employee,
   type LocationId,
@@ -40,6 +41,7 @@ export function TimelinesApp() {
   const [location, setLocation] = useState<LocationId | "all">("all")
   const [department, setDepartment] = useState<DepartmentId | "all">("all")
   const [weekStart, setWeekStart] = useState(BASE_WEEK_START)
+  const [departments, setDepartments] = useState<Department[]>(DEPARTMENTS)
   const [employees, setEmployees] = useState<Employee[]>(EMPLOYEES)
   const [shifts, setShifts] = useState<Shift[]>(SHIFTS)
   /** shifts created, moved or retimed — their warnings are re-checked instead of using the Figma copy */
@@ -207,6 +209,43 @@ export function TimelinesApp() {
     })
   }
 
+  function renameDepartment(id: DepartmentId, name: string) {
+    const before = departments.find((d) => d.id === id)
+    if (!before || before.name === name) return
+    setDepartments((list) => list.map((d) => (d.id === id ? { ...d, name } : d)))
+    toast(`Renamed to “${name}”`, {
+      id: "rename-department",
+      action: {
+        label: "Undo",
+        onClick: () => setDepartments((list) => list.map((d) => (d.id === id ? { ...d, name: before.name } : d))),
+      },
+    })
+  }
+
+  function removeEmployee(employee: Employee) {
+    const index = employees.findIndex((e) => e.id === employee.id)
+    const theirShifts = shifts.filter((s) => s.employeeId === employee.id)
+    setEmployees((list) => list.filter((e) => e.id !== employee.id))
+    setShifts((list) => list.filter((s) => s.employeeId !== employee.id))
+    markDirty()
+    toast(`Removed ${employee.name}`, {
+      description: theirShifts.length
+        ? `${theirShifts.length} ${theirShifts.length === 1 ? "shift" : "shifts"} removed with them`
+        : undefined,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          setEmployees((list) => {
+            const next = [...list]
+            next.splice(Math.min(index, next.length), 0, employee)
+            return next
+          })
+          setShifts((list) => [...list, ...theirShifts])
+        },
+      },
+    })
+  }
+
   function addEmployee(dept: DepartmentId, name: string, role: string) {
     const id = `new-${nextId.current++}`
     const employee: Employee = {
@@ -224,7 +263,7 @@ export function TimelinesApp() {
     setNewIds((prev) => new Set(prev).add(id))
     setAddOpenFor(null)
     markDirty()
-    toast.success(`${name} added to ${DEPARTMENTS.find((d) => d.id === dept)!.name}`)
+    toast.success(`${name} added to ${departments.find((d) => d.id === dept)!.name}`)
   }
 
   // Only Timelines exists in this prototype; every other destination says so.
@@ -235,7 +274,7 @@ export function TimelinesApp() {
 
   /* ------------------------------ filtering ----------------------------- */
   const q = query.trim().toLowerCase()
-  const visibleDepartments = DEPARTMENTS.filter((d) => department === "all" || d.id === department)
+  const visibleDepartments = departments.filter((d) => department === "all" || d.id === department)
 
   return (
     <div className="timelines flex h-dvh min-h-0 overflow-hidden bg-(--tl-shell)">
@@ -278,6 +317,7 @@ export function TimelinesApp() {
               onLocationChange={setLocation}
               department={department}
               onDepartmentChange={setDepartment}
+              departments={departments}
             />
           </div>
 
@@ -316,6 +356,8 @@ export function TimelinesApp() {
                   onResolve={(id) => resolveIds([id], "Warning resolved")}
                   onSaveShift={saveShift}
                   onSetDayStatus={setDayStatus}
+                  onRename={(name) => renameDepartment(d.id, name)}
+                  onRemoveEmployee={removeEmployee}
                 />
               )
             })}

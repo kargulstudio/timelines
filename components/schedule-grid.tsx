@@ -67,6 +67,7 @@ type ScheduleGridProps = {
   onSaveShift: (next: Shift, prev?: Shift, message?: string) => void
   /** mark a day off / sick, or clear it back to empty (null) */
   onSetDayStatus: (employeeId: string, day: DayIndex, status: DayStatus | null) => void
+  onRemoveEmployee: (employee: Employee) => void
 }
 
 /** Figma 1:10059 — employee column + 7-day CSS grid with bars, unavailable cells and links. */
@@ -87,6 +88,7 @@ export function ScheduleGrid({
   onResolve,
   onSaveShift,
   onSetDayStatus,
+  onRemoveEmployee,
 }: ScheduleGridProps) {
   const rowOf = new Map(employees.map((e, i) => [e.id, i]))
   const byId = new Map(employees.map((e) => [e.id, e]))
@@ -162,7 +164,13 @@ export function ScheduleGrid({
             <p className="self-center text-sm font-medium text-(--tl-fg-legend)">{emptyMessage}</p>
           ) : (
             employees.map((e) => (
-              <EmployeeCell key={e.id} employee={e} hours={hours.get(e.id) ?? 0} isNew={newIds.has(e.id)} />
+              <EmployeeCell
+                key={e.id}
+                employee={e}
+                hours={hours.get(e.id) ?? 0}
+                isNew={newIds.has(e.id)}
+                onRemove={() => onRemoveEmployee(e)}
+              />
             ))
           )}
         </div>
@@ -516,12 +524,42 @@ function DayStatusMenu({
   )
 }
 
-function EmployeeCell({ employee, hours, isNew }: { employee: Employee; hours: number; isNew: boolean }) {
+function EmployeeCell({
+  employee,
+  hours,
+  isNew,
+  onRemove,
+}: {
+  employee: Employee
+  hours: number
+  isNew: boolean
+  onRemove: () => void
+}) {
   return (
-    <div className={cn("mt-3 flex flex-col justify-center gap-3 self-start", isNew && "tl-enter")}>
+    <div className={cn("group/emp mt-3 flex flex-col justify-center gap-3 self-start", isNew && "tl-enter")}>
       <div className="flex items-center gap-2">
         <Avatar employee={employee} />
         <p className="tl-plain truncate text-sm font-medium whitespace-nowrap text-(--tl-fg-strong)">{employee.name}</p>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label={`Options for ${employee.name}`}
+            className={cn(
+              "-my-1 flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[5px] opacity-0 outline-none",
+              "transition-[opacity,background-color] duration-(--duration-fast) hover:bg-[rgba(13,14,19,0.05)] data-popup-open:bg-[rgba(13,14,19,0.08)]",
+              "group-hover/emp:opacity-100 focus-visible:opacity-100 focus-visible:shadow-[0px_0px_0px_2px_var(--ring-focus)] data-popup-open:opacity-100 pointer-coarse:opacity-60"
+            )}
+          >
+            <FigmaIcon src="/figma/icons/dots-horizontal.svg" size={12} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48" sideOffset={6}>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{employee.name}</DropdownMenuLabel>
+              <DropdownMenuItem variant="destructive" onClick={onRemove}>
+                Remove from schedule
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="flex items-center gap-2">
         <Tooltip>
