@@ -25,10 +25,19 @@ Other scripts: `pnpm build` · `pnpm start` · `pnpm lint`
 
 - **Search** (<kbd>/</kbd>) filters employees across departments
 - **Location / department** filters and a **week picker**
-- **Warnings**: the Conflicts and Overtime chips highlight the affected shifts, and *Fix warnings* resolves them, with Undo
-- **Shift bars**: hover for a tooltip; click for details, Resolve or Remove
-- **Cards**: collapse, show or hide connectors, sort, and add an employee
+- **Warnings**: the Conflicts and Overtime chips highlight the affected shifts, and *Fix warnings* resolves them, with Undo. Edited shifts are re-checked against days off, sick days and each person's weekly hour limit
+- **Shift bars**: hover for a tooltip; click for details, Edit, Resolve or Remove; double-click to edit
+- **Shift editor**: title, start / end time and day range, plus Delete. <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels
+- **Add a shift**: click an empty day in an employee's row (a ghost bar shows on hover)
+- **Days off / sick days**: an empty day's corner menu (or the new-shift editor) marks it OFF or Sick; click an OFF / Sick cell to switch or clear it
+- **Drag**: move a bar to other days or pull its edges to resize, snapping to day columns and stopping at other shifts, days off and sick days. On touch, press and hold first. With a bar focused, <kbd>←</kbd> / <kbd>→</kbd> move it, <kbd>Shift</kbd> + arrows resize it, <kbd>Delete</kbd> removes it
+- **Weekly hours** pills follow the shifts (Figma's numbers for the untouched schedule, then every edit adds or removes its own hours)
+- **Swap / cover links** keep their exact Figma vectors until a linked shift moves; then they are redrawn between the bars' current positions, and dropped if a shift is deleted
+- **Undo** in the toast for removals, edits, moves, day changes, renames and removed employees
+- **Cards**: collapse, show or hide links, sort, add an employee, rename the department inline (pencil, or double-click the title) and remove an employee from the row menu
 - **Publish schedule** warns while issues remain, then publishes
+- **Mobile**: below 1024px the sidebar is a drawer and the week scrolls sideways (snapping per day) under a sticky employee column; on phones search collapses to an icon, filters sit behind one *Filters* button, secondary actions move into a "…" menu, and popovers and editors open as bottom sheets
+- Anything not built yet (other pages, workspace settings, imports, shift templates…) says it is coming soon
 
 ## Stack
 
@@ -47,6 +56,11 @@ Other scripts: `pnpm build` · `pnpm start` · `pnpm lint`
 | [`components/schedule-toolbar.tsx`](components/schedule-toolbar.tsx) | Week picker, warnings, Publish and filters |
 | [`components/department-card.tsx`](components/department-card.tsx) | Department card with header actions and legend |
 | [`components/schedule-grid.tsx`](components/schedule-grid.tsx) | Employee rows and the 7-day CSS grid |
-| [`components/shift-bar.tsx`](components/shift-bar.tsx) | Shift bar with tooltip and details popover |
+| [`components/shift-bar.tsx`](components/shift-bar.tsx) | Shift bar with tooltip, details popover, drag and keyboard moves |
+| [`components/shift-editor.tsx`](components/shift-editor.tsx) | Add / edit shift form |
+| [`components/ui/responsive-popover.tsx`](components/ui/responsive-popover.tsx) | Popover that becomes a bottom sheet on phones |
 | [`components/figma-icon.tsx`](components/figma-icon.tsx) | Local Figma icon helper |
 | [`lib/data.ts`](lib/data.ts) | Mock departments, employees, shifts, connectors and warnings |
+| [`lib/schedule.ts`](lib/schedule.ts) | Time parsing, placement rules, weekly hours and warning checks |
+| [`lib/prototype.ts`](lib/prototype.ts) | `comingSoon()` toast for unbuilt features |
+| [`app/icon.svg`](app/icon.svg), [`app/apple-icon.tsx`](app/apple-icon.tsx) | Favicon and Apple touch icon from the Acme mark (`public/figma/logo.svg`) |
