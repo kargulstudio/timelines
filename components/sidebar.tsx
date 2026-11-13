@@ -30,17 +30,37 @@ import { FigmaIcon } from "./figma-icon"
 type SidebarProps = {
   active: string
   onNavigate: (id: string) => void
+  /** desktop: hide the rail; below lg: close the drawer */
   onCollapse: () => void
+  /** ≥1024px: docked rail. Below: off-canvas drawer. */
+  isDesktop: boolean
+  mobileOpen: boolean
+  /** rail collapsed on desktop */
+  hiddenOnDesktop: boolean
 }
 
 /** Figma 1:9815 — 240px rail on the #F5F5F5 shell. */
-export function Sidebar({ active, onNavigate, onCollapse }: SidebarProps) {
+export function Sidebar({ active, onNavigate, onCollapse, isDesktop, mobileOpen, hiddenOnDesktop }: SidebarProps) {
   const [reportsOpen, setReportsOpen] = useState(true)
   const [workspace, setWorkspace] = useState<string>(WORKSPACES[0])
   const reportsChildActive = NAV_REPORTS_CHILDREN.some((c) => c.id === active)
 
   return (
-    <aside aria-label="Sidebar" className="flex h-full w-60 shrink-0 flex-col px-3 pt-3 pb-3">
+    <aside
+      aria-label="Sidebar"
+      data-mobile-open={mobileOpen || undefined}
+      // the off-screen drawer must not be reachable by Tab / screen readers
+      inert={!isDesktop && !mobileOpen}
+      className={cn(
+        "flex h-full w-60 shrink-0 flex-col px-3 pt-3 pb-3",
+        hiddenOnDesktop && "lg:hidden",
+        // < lg: off-canvas drawer on the shell colour, slides with the drawer curve
+        "max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[min(18rem,85vw)] max-lg:-translate-x-full max-lg:bg-(--tl-shell)",
+        "max-lg:transition-[translate,box-shadow] max-lg:duration-300 max-lg:ease-drawer",
+        "max-lg:data-mobile-open:translate-x-0 max-lg:data-mobile-open:shadow-[16px_0_48px_-8px_rgba(9,9,11,0.24)]",
+        "max-lg:pt-[max(0.75rem,env(safe-area-inset-top))] max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      )}
+    >
       {/* Workspace row — 1:9816 */}
       <div className="flex h-6 shrink-0 items-center justify-between">
         <DropdownMenu>
@@ -100,7 +120,13 @@ export function Sidebar({ active, onNavigate, onCollapse }: SidebarProps) {
               <DropdownMenuItem onClick={() => comingSoon("Workspace settings")}>
                 Workspace settings
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast("Keyboard shortcuts: / search, Esc clear")}>
+              <DropdownMenuItem
+                onClick={() =>
+                  toast("Keyboard shortcuts", {
+                    description: "/ search · ←/→ move a focused shift · Shift+←/→ resize · Delete removes",
+                  })
+                }
+              >
                 Keyboard shortcuts
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -108,10 +134,14 @@ export function Sidebar({ active, onNavigate, onCollapse }: SidebarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
           <Tooltip>
-            <TooltipTrigger className="tl-icon-btn size-3.5" aria-label="Collapse sidebar" onClick={onCollapse}>
+            <TooltipTrigger
+              className="tl-icon-btn size-3.5"
+              aria-label={isDesktop ? "Collapse sidebar" : "Close menu"}
+              onClick={onCollapse}
+            >
               <FigmaIcon src="/figma/icons/layout-left.svg" />
             </TooltipTrigger>
-            <TooltipContent>Collapse sidebar</TooltipContent>
+            <TooltipContent>{isDesktop ? "Collapse sidebar" : "Close menu"}</TooltipContent>
           </Tooltip>
         </div>
       </div>
@@ -120,7 +150,7 @@ export function Sidebar({ active, onNavigate, onCollapse }: SidebarProps) {
       <button
         type="button"
         onClick={() => comingSoon("New timeline")}
-        className="tl-press mt-4 flex h-[30px] w-full shrink-0 items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-white pr-[11px] pl-2.5 shadow-(--tl-shadow-new)"
+        className="tl-press mt-4 flex h-[30px] pointer-coarse:h-10 w-full shrink-0 items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-white pr-[11px] pl-2.5 shadow-(--tl-shadow-new)"
       >
         <span className="flex size-3.5 items-center justify-center">
           <FigmaIcon src="/figma/icons/plus-4.svg" size={15} />
@@ -213,7 +243,7 @@ function NavRow({ item, active, nested, onClick, trailing, ...aria }: NavRowProp
       aria-current={active ? "page" : undefined}
       {...aria}
       className={cn(
-        "group/nav tl-press tl-press-ghost flex h-[30px] w-full shrink-0 items-center gap-1 overflow-hidden rounded-[7px] py-2 pr-2 text-left outline-none",
+        "group/nav tl-press tl-press-ghost flex h-[30px] pointer-coarse:h-10 w-full shrink-0 items-center gap-1 overflow-hidden rounded-[7px] py-2 pr-2 text-left outline-none",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--ring-focus)",
         nested ? "pl-8" : "pl-2",
         active && "bg-(--tl-nav-active)! "

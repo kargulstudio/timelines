@@ -5,6 +5,7 @@ import { addDays, format, isSameDay } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { comingSoon } from "@/lib/prototype"
+import { BREAKPOINTS, useMediaQuery } from "@/lib/use-media-query"
 import { computeWarnings, formatHours, shiftHours, weeklyHours, type DayStatus } from "@/lib/schedule"
 import {
   BASE_WEEK_START,
@@ -54,6 +55,13 @@ export function TimelinesApp() {
   const [newIds, setNewIds] = useState<Set<string>>(() => new Set())
   const searchRef = useRef<HTMLInputElement>(null)
   const nextId = useRef(1)
+  // < lg: the sidebar is an off-canvas drawer opened from the top bar
+  const isDesktop = useMediaQuery(BREAKPOINTS.lg)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const mobileOpen = drawerOpen && !isDesktop
+  // < md: search collapses to an icon; feedback opens from the top bar's "…" menu
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const isBaseWeek = isSameDay(weekStart, BASE_WEEK_START)
 
@@ -64,12 +72,24 @@ export function TimelinesApp() {
       const t = e.target as HTMLElement | null
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return
       e.preventDefault()
-      searchRef.current?.focus()
-      searchRef.current?.select()
+      setSearchOpen(true)
+      // the field may only appear after this render (collapsed search on phones)
+      requestAnimationFrame(() => {
+        searchRef.current?.focus()
+        searchRef.current?.select()
+      })
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [])
+
+  // Esc closes the drawer
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawerOpen(false)
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [mobileOpen])
 
   /* ------------------------------ warnings ------------------------------ */
   const hours = useMemo(() => weeklyHours(employees, shifts), [employees, shifts])
@@ -268,6 +288,7 @@ export function TimelinesApp() {
 
   // Only Timelines exists in this prototype; every other destination says so.
   function navigate(id: string) {
+    setDrawerOpen(false)
     if (id === "timelines") return
     comingSoon(ALL_NAV.find((n) => n.id === id)?.label ?? "This page")
   }
@@ -278,18 +299,38 @@ export function TimelinesApp() {
 
   return (
     <div className="timelines flex h-dvh min-h-0 overflow-hidden bg-(--tl-shell)">
-      {!sidebarCollapsed && (
-        <Sidebar active="timelines" onNavigate={navigate} onCollapse={() => setSidebarCollapsed(true)} />
-      )}
+      <Sidebar
+        active="timelines"
+        onNavigate={navigate}
+        isDesktop={isDesktop}
+        mobileOpen={mobileOpen}
+        hiddenOnDesktop={sidebarCollapsed}
+        onCollapse={() => (isDesktop ? setSidebarCollapsed(true) : setDrawerOpen(false))}
+      />
+
+      {/* Drawer scrim (< lg only) */}
+      <div
+        aria-hidden
+        onClick={() => setDrawerOpen(false)}
+        className={cn(
+          "fixed inset-0 z-40 bg-(--bg-overlay) transition-opacity duration-(--duration-slow) ease-out-strong lg:hidden",
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+      />
 
       <main
+        inert={mobileOpen}
         className={cn(
-          "tl-scroll my-2 mr-2 min-w-0 flex-1 overflow-y-auto rounded-lg bg-(--tl-panel) shadow-(--tl-shadow-panel)",
+          "tl-scroll my-2 mr-2 min-w-0 flex-1 overflow-y-auto overscroll-contain rounded-lg bg-(--tl-panel) shadow-(--tl-shadow-panel) max-lg:ml-2",
           sidebarCollapsed && "ml-2"
         )}
       >
-        <div className="flex min-h-full flex-col px-6 pt-6 pb-6">
+        <div className="flex min-h-full flex-col px-6 pt-6 pb-6 max-md:px-4 max-md:pt-4">
           <TopBar
+            onOpenMenu={() => setDrawerOpen(true)}
+            searchOpen={searchOpen}
+            onSearchOpenChange={setSearchOpen}
+            onOpenFeedback={() => setFeedbackOpen(true)}
             inputRef={searchRef}
             query={query}
             onQueryChange={setQuery}
@@ -298,7 +339,7 @@ export function TimelinesApp() {
             onExpandSidebar={() => setSidebarCollapsed(false)}
           />
 
-          <div className="mt-8">
+          <div className="mt-8 max-md:mt-5">
             <ScheduleToolbar
               weekStart={weekStart}
               onWeekChange={(d) => {
@@ -318,10 +359,12 @@ export function TimelinesApp() {
               department={department}
               onDepartmentChange={setDepartment}
               departments={departments}
+              feedbackOpen={feedbackOpen}
+              onFeedbackOpenChange={setFeedbackOpen}
             />
           </div>
 
-          <div className="mt-5 flex flex-col gap-5">
+          <div className="mt-5 flex flex-col gap-5 max-md:mt-4 max-md:gap-4">
             {visibleDepartments.map((d) => {
               const deptEmployees = employees.filter((e) => e.departmentId === d.id)
               const defaultOrder = deptEmployees.map((e) => e.id)

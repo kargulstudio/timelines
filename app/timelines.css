@@ -129,6 +129,12 @@
 .timelines .tl-icon-btn > img {
   position: relative;
 }
+/* Touch: the same 14px glyphs get a 40px target */
+@media (pointer: coarse) {
+  .timelines .tl-icon-btn::before {
+    inset: -13px;
+  }
+}
 
 /* ---------------------------------------------------------------------------
  * Schedule grid

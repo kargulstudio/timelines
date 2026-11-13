@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Popover, PopoverContent } from "@/components/ui/popover"
+import { Popover, PopoverContent } from "@/components/ui/responsive-popover"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,14 +141,19 @@ export function ScheduleGrid({
   return (
     // Table — r-7 with a 1px rgba(230,230,230,.6) inside stroke (drawn as an overlay so it never eats layout width)
     <div className="relative overflow-hidden rounded-[7px] after:pointer-events-none after:absolute after:inset-0 after:z-10 after:rounded-[inherit] after:shadow-[inset_0_0_0_1px_var(--tl-line)]">
+      {/*
+        < xl: the 7 days scroll sideways (snapping to day columns) under a sticky
+        employee column. ≥ xl this wrapper is inert and the Figma layout is untouched.
+      */}
+      <div className="tl-scroll max-xl:snap-x max-xl:snap-mandatory max-xl:overflow-x-auto max-xl:overscroll-x-contain max-xl:scroll-pl-[264px] max-md:scroll-pl-36">
       {/* Header row — 1:10060 */}
-      <div className="flex h-[38px] gap-6 bg-(--tl-shell)">
+      <div className="flex h-[38px] gap-6 bg-(--tl-shell) max-xl:w-max max-md:gap-0">
         {employeeHeader}
-        <div className="grid min-w-0 flex-1 grid-cols-7 shadow-[inset_1px_0_0_var(--tl-line)]">
+        <div className="grid min-w-0 flex-1 grid-cols-7 shadow-[inset_1px_0_0_var(--tl-line)] max-xl:w-[840px] max-xl:flex-none">
           {DAYS.map((d, i) => (
             <div
               key={d}
-              className={cn("flex items-center p-3", i < 6 && "shadow-[inset_-1px_0_0_var(--tl-line)]")}
+              className={cn("flex items-center p-3 max-xl:snap-start", i < 6 && "shadow-[inset_-1px_0_0_var(--tl-line)]")}
             >
               <span className="tl-plain flex-1 text-sm font-medium text-(--tl-fg-day)">{d}</span>
             </div>
@@ -157,9 +162,15 @@ export function ScheduleGrid({
       </div>
 
       {/* Body — 1:10082 */}
-      <div className="flex gap-6">
+      <div className="flex gap-6 max-xl:w-max max-md:gap-0">
         {/* Employee column — 1:10083 */}
-        <div className="grid w-60 shrink-0 px-3 pt-px" style={{ gridTemplateRows: template }}>
+        <div
+          className={cn(
+            "grid w-60 shrink-0 px-3 pt-px",
+            "max-xl:sticky max-xl:left-0 max-xl:z-[6] max-xl:bg-white max-md:w-36 max-md:px-2 max-md:shadow-[inset_-1px_0_0_var(--tl-line)]"
+          )}
+          style={{ gridTemplateRows: template }}
+        >
           {employees.length === 0 ? (
             <p className="self-center text-sm font-medium text-(--tl-fg-legend)">{emptyMessage}</p>
           ) : (
@@ -179,7 +190,7 @@ export function ScheduleGrid({
         <div
           ref={gridRef}
           data-highlight={highlight ?? undefined}
-          className="relative grid min-w-0 flex-1 grid-cols-7 overflow-hidden pt-px"
+          className="relative grid min-w-0 flex-1 grid-cols-7 overflow-hidden pt-px max-xl:w-[840px] max-xl:flex-none"
           style={{ gridTemplateRows: template }}
         >
           {/* z0: row rules + dashed centre track */}
@@ -342,13 +353,16 @@ export function ScheduleGrid({
         </div>
       </div>
 
-      {/* One editor per card, anchored to the bar or cell that opened it */}
+      </div>
+
+      {/* One editor per card, anchored to the bar or cell that opened it (a bottom sheet on phones) */}
       <Popover open={editorOpen} onOpenChange={setEditorOpen}>
         <PopoverContent
           anchor={editor?.anchor}
           align="start"
           sideOffset={6}
           className="w-80 gap-3 p-3"
+          title={editor?.target.kind === "edit" ? "Edit shift" : "New shift"}
           finalFocus={editor?.anchor.isConnected ? { current: editor.anchor } : false}
         >
           {editor && editorEmployee && (
@@ -536,15 +550,22 @@ function EmployeeCell({
   onRemove: () => void
 }) {
   return (
-    <div className={cn("group/emp mt-3 flex flex-col justify-center gap-3 self-start", isNew && "tl-enter")}>
-      <div className="flex items-center gap-2">
-        <Avatar employee={employee} />
+    <div
+      className={cn(
+        "group/emp mt-3 flex flex-col justify-center gap-3 self-start max-md:w-full max-md:min-w-0",
+        isNew && "tl-enter"
+      )}
+    >
+      <div className="flex items-center gap-2 max-md:gap-1">
+        <span className="contents max-md:hidden">
+          <Avatar employee={employee} />
+        </span>
         <p className="tl-plain truncate text-sm font-medium whitespace-nowrap text-(--tl-fg-strong)">{employee.name}</p>
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Options for ${employee.name}`}
             className={cn(
-              "-my-1 flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[5px] opacity-0 outline-none",
+              "-my-1 flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[5px] opacity-0 outline-none pointer-coarse:-my-2.5 pointer-coarse:size-10",
               "transition-[opacity,background-color] duration-(--duration-fast) hover:bg-[rgba(13,14,19,0.05)] data-popup-open:bg-[rgba(13,14,19,0.08)]",
               "group-hover/emp:opacity-100 focus-visible:opacity-100 focus-visible:shadow-[0px_0px_0px_2px_var(--ring-focus)] data-popup-open:opacity-100 pointer-coarse:opacity-60"
             )}
@@ -574,8 +595,8 @@ function EmployeeCell({
           </TooltipTrigger>
           <TooltipContent>Scheduled this week</TooltipContent>
         </Tooltip>
-        <VDivider />
-        <span className="flex h-6 min-w-0 items-center justify-center overflow-hidden rounded-[5px] bg-white px-1.5 py-[5px] shadow-(--tl-shadow-chip)">
+        <VDivider className="max-md:hidden" />
+        <span className="flex h-6 min-w-0 items-center justify-center overflow-hidden rounded-[5px] bg-white px-1.5 py-[5px] shadow-(--tl-shadow-chip) max-md:hidden">
           <span className="truncate px-0.5 text-sm font-medium whitespace-nowrap text-(--tl-fg-body)">{employee.role}</span>
         </span>
       </div>

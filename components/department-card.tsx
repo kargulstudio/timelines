@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/responsive-popover"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +55,7 @@ export function DepartmentCard(props: DepartmentCardProps) {
   return (
     <section
       aria-labelledby={`${bodyId}-title`}
-      className="flex flex-col overflow-hidden rounded-[14px] bg-white p-4 shadow-(--tl-shadow-card)"
+      className="flex flex-col overflow-hidden rounded-[14px] bg-white p-4 shadow-(--tl-shadow-card) max-md:p-3"
     >
       {/* Header — 1:10045 */}
       <div className="flex h-4 items-start justify-between">
@@ -84,7 +84,7 @@ export function DepartmentCard(props: DepartmentCardProps) {
             </h2>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pointer-coarse:gap-6">
           <Tooltip>
             <TooltipTrigger
               className="tl-icon-btn size-3.5"
@@ -146,7 +146,7 @@ export function DepartmentCard(props: DepartmentCardProps) {
               onSetDayStatus={props.onSetDayStatus}
               onRemoveEmployee={props.onRemoveEmployee}
               employeeHeader={
-                <div className="flex w-60 shrink-0 items-center gap-2 p-3">
+                <div className="flex w-60 shrink-0 items-center gap-2 p-3 max-xl:sticky max-xl:left-0 max-xl:z-[6] max-xl:bg-(--tl-shell) max-md:w-36 max-md:gap-3 max-md:px-2 max-md:shadow-[inset_-1px_0_0_var(--tl-line)]">
                   <span className="tl-plain flex-1 text-sm font-medium text-(--tl-fg-strong)">Employee</span>
                   <AddEmployeePopover
                     department={department}
@@ -179,21 +179,35 @@ export function DepartmentCard(props: DepartmentCardProps) {
             />
 
             {/* Legend — 1:10393 */}
-            <div className="flex h-4 items-center gap-5">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-4 items-center gap-5 max-md:h-auto max-md:items-start">
+              <div className="flex min-w-0 flex-1 items-center gap-3 max-md:flex-wrap max-md:gap-y-2">
                 <LegendItem icon={department.legendSwitchIcon} label="Switch a Shift" />
                 <LegendItem icon={department.legendCoverIcon} label="Covering a Shift" />
                 <VDivider />
                 <LegendItem icon="/figma/icons/legend-square.svg" label="Sick" />
               </div>
-              <Tooltip>
-                <TooltipTrigger className="tl-icon-btn size-3.5" aria-label="About this legend">
-                  <FigmaIcon src="/figma/icons/help-circle.svg" />
-                </TooltipTrigger>
-                <TooltipContent side="left" className="max-w-60">
-                  Dots mark switched shifts, arrows mark covers. Hatched cells are days off or sick days.
-                </TooltipContent>
-              </Tooltip>
+              {/* hover for the short version; click / tap for how to edit the schedule */}
+              <Popover>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={<PopoverTrigger className="tl-icon-btn size-3.5 outline-none" aria-label="About this legend" />}
+                  >
+                    <FigmaIcon src="/figma/icons/help-circle.svg" />
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-60">
+                    Dots mark switched shifts, arrows mark covers. Hatched cells are days off or sick days.
+                  </TooltipContent>
+                </Tooltip>
+                <PopoverContent side="top" align="end" sideOffset={8} className="w-72 gap-2 p-3" title="About this schedule">
+                  <p className="text-sm font-medium text-(--tl-fg-strong)">Reading and editing the schedule</p>
+                  <ul className="flex list-disc flex-col gap-1 pl-4 text-[13px] leading-[1.4] tracking-[-0.01em] text-(--tl-fg-body)">
+                    <li>Dots mark switched shifts, arrows mark covers.</li>
+                    <li>Hatched cells are days off (grey) or sick days (amber). Click one to change it.</li>
+                    <li>Click an empty day to add a shift, or drag a shift and its edges to move or resize it.</li>
+                    <li>On touch, press and hold a shift before dragging.</li>
+                  </ul>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
@@ -255,7 +269,7 @@ function AddEmployeePopover({
   const [name, setName] = useState("")
   const [role, setRole] = useState("")
   const field =
-    "h-8 w-full rounded-md bg-white px-2 text-[13px] tracking-[-0.01em] text-(--tl-fg-strong) shadow-(--tl-shadow-chip) outline-none placeholder:text-(--tl-fg-placeholder) focus:shadow-[0px_0px_0px_1px_#d4d4d4,0px_0px_0px_3px_rgba(16,103,255,0.14)]"
+    "h-8 max-md:h-10 max-md:text-base w-full rounded-md bg-white px-2 text-[13px] tracking-[-0.01em] text-(--tl-fg-strong) shadow-(--tl-shadow-chip) outline-none placeholder:text-(--tl-fg-placeholder) focus:shadow-[0px_0px_0px_1px_#d4d4d4,0px_0px_0px_3px_rgba(16,103,255,0.14)]"
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -267,7 +281,7 @@ function AddEmployeePopover({
         </TooltipTrigger>
         <TooltipContent>Add employee</TooltipContent>
       </Tooltip>
-      <PopoverContent align="start" sideOffset={10} className="w-64 p-3">
+      <PopoverContent align="start" sideOffset={10} className="w-64 p-3" title={`Add to ${department.name}`}>
         <form
           className="flex flex-col gap-2.5"
           onSubmit={(e) => {
@@ -297,7 +311,7 @@ function AddEmployeePopover({
           <button
             type="submit"
             disabled={!name.trim()}
-            className="tl-press tl-press-dark h-[30px] rounded-[7px] bg-(--tl-publish) text-sm font-medium text-white disabled:cursor-default disabled:opacity-40"
+            className="tl-press tl-press-dark h-[30px] rounded-[7px] bg-(--tl-publish) text-sm font-medium text-white disabled:cursor-default disabled:opacity-40 max-md:h-11"
           >
             Add employee
           </button>

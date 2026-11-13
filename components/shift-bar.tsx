@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useCallback, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/responsive-popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DAYS, DAY_NAMES, type Employee, type Shift, type ShiftWarning } from "@/lib/data"
 import { formatHours, shiftHours } from "@/lib/schedule"
@@ -73,8 +73,10 @@ export function ShiftBar({
   const end = preview?.end ?? shift.end
 
   // While a touch drag is live, stop the browser from turning the gesture into a scroll.
-  useEffect(() => {
-    const el = barRef.current
+  // A ref callback (not an effect) so it follows the element when the trigger remounts
+  // (the popover swaps to a bottom sheet on phones).
+  const setBarRef = useCallback((el: HTMLButtonElement | null) => {
+    barRef.current = el
     if (!el) return
     const block = (e: TouchEvent) => {
       if (drag.current?.active) e.preventDefault()
@@ -208,7 +210,7 @@ export function ShiftBar({
         <TooltipTrigger
           render={
             <PopoverTrigger
-              ref={barRef}
+              ref={setBarRef}
               onDoubleClick={edit}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
@@ -243,7 +245,7 @@ export function ShiftBar({
         </TooltipContent>
       </Tooltip>
 
-      <PopoverContent align="start" sideOffset={6} className="w-72 gap-3 p-3">
+      <PopoverContent align="start" sideOffset={6} className="w-72 gap-3 p-3" title={shift.title}>
         <div className="flex items-start gap-2.5">
           <span aria-hidden className="mt-0.5 h-8 w-1 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
           <div className="flex min-w-0 flex-col gap-1">
@@ -279,7 +281,7 @@ export function ShiftBar({
             <button
               type="button"
               onClick={() => onResolve(shift.id)}
-              className="tl-press shrink-0 rounded-[5px] bg-white px-2 py-1 text-xs font-medium text-(--tl-fg-button) shadow-(--tl-shadow-chip)"
+              className="tl-press shrink-0 rounded-[5px] bg-white px-2 py-1 text-xs font-medium max-md:px-3 max-md:py-2.5 text-(--tl-fg-button) shadow-(--tl-shadow-chip)"
             >
               Resolve
             </button>
@@ -289,14 +291,14 @@ export function ShiftBar({
           <button
             type="button"
             onClick={edit}
-            className="tl-press h-7 rounded-md bg-white px-2.5 text-[13px] font-medium tracking-[-0.01em] text-(--tl-fg-button) shadow-(--tl-shadow-chip)"
+            className="tl-press h-7 max-md:h-10 max-md:px-3.5 rounded-md bg-white px-2.5 text-[13px] font-medium tracking-[-0.01em] text-(--tl-fg-button) shadow-(--tl-shadow-chip)"
           >
             Edit shift
           </button>
           <button
             type="button"
             onClick={() => onRemove(shift)}
-            className="tl-press tl-press-danger h-7 rounded-md bg-(--tl-danger-bg) px-2.5 text-[13px] font-medium tracking-[-0.01em] text-(--tl-danger) shadow-[0px_0px_0px_1px_var(--tl-danger-ring)]"
+            className="tl-press tl-press-danger h-7 max-md:h-10 max-md:px-3.5 rounded-md bg-(--tl-danger-bg) px-2.5 text-[13px] font-medium tracking-[-0.01em] text-(--tl-danger) shadow-[0px_0px_0px_1px_var(--tl-danger-ring)]"
           >
             Remove
           </button>

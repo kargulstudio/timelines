@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/responsive-popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   DropdownMenu,
@@ -41,6 +41,9 @@ type ScheduleToolbarProps = {
   onDepartmentChange: (d: DepartmentId | "all") => void
   /** live departments (names can be edited) */
   departments: Department[]
+  /** feedback popover (also opened from the phone top bar menu) */
+  feedbackOpen: boolean
+  onFeedbackOpenChange: (open: boolean) => void
 }
 
 /** Figma 1:9974 — date range, shift warnings, publish; dashed rule; filters + feedback. */
@@ -60,6 +63,8 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
     department,
     onDepartmentChange,
     departments,
+    feedbackOpen,
+    onFeedbackOpenChange,
   } = props
   const hasWarnings = conflicts + overtime > 0
   const locationLabel = location === "all" ? "Acme Inc." : LOCATIONS.find((l) => l.id === location)!.name
@@ -68,8 +73,11 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
 
   return (
     <div className="flex flex-col gap-[11px]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-x-2 max-xl:flex-wrap max-xl:gap-y-2">
+        {/* < md: week, warnings and filters live behind one button */}
+        <FiltersSheet {...props} />
+
+        <div className="flex items-center gap-2 max-md:hidden max-xl:flex-wrap">
           <WeekPicker weekStart={weekStart} onWeekChange={onWeekChange} />
 
           <VDivider />
@@ -111,8 +119,8 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-xl:ml-auto">
+          <div className="flex items-center gap-2 max-md:gap-6 max-md:px-3">
             <Tooltip>
               <TooltipTrigger
                 className="tl-icon-btn size-3.5"
@@ -134,11 +142,11 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
               <TooltipContent>Schedule rules</TooltipContent>
             </Tooltip>
           </div>
-          <VDivider />
+          <VDivider className="max-md:hidden" />
           <button
             type="button"
             onClick={onPublish}
-            className="tl-press tl-press-dark flex h-[30px] items-center justify-center gap-0.5 overflow-hidden rounded-[7px] bg-(--tl-publish) p-2 shadow-(--tl-shadow-card) outline-none focus-visible:outline-2 focus-visible:outline-(--ring-focus)"
+            className="tl-press tl-press-dark flex h-[30px] max-md:h-10 max-md:px-3 items-center justify-center gap-0.5 overflow-hidden rounded-[7px] bg-(--tl-publish) p-2 shadow-(--tl-shadow-card) outline-none focus-visible:outline-2 focus-visible:outline-(--ring-focus)"
           >
             <span className="flex size-3.5 items-center justify-center overflow-hidden">
               {published ? (
@@ -148,19 +156,19 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
               )}
             </span>
             <span className="px-0.5 text-sm font-medium whitespace-nowrap text-white">
-              {published ? "Published" : "Publish schedule"}
+              {published ? "Published" : <>Publish<span className="max-md:hidden"> schedule</span></>}
             </span>
           </button>
         </div>
       </div>
 
       {/* Dashed rule — Figma vector 1:10017 */}
-      <div aria-hidden className="h-px w-full overflow-hidden">
+      <div aria-hidden className="h-px w-full overflow-hidden max-md:hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/figma/icons/toolbar-divider.svg" alt="" width={1145} height={1} className="block max-w-none" />
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between max-md:hidden">
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger className={CONTROL}>
@@ -209,7 +217,7 @@ export function ScheduleToolbar(props: ScheduleToolbarProps) {
           </DropdownMenu>
         </div>
 
-        <FeedbackButton />
+        <FeedbackButton open={feedbackOpen} onOpenChange={onFeedbackOpenChange} />
       </div>
     </div>
   )
@@ -303,8 +311,7 @@ function WeekPicker({ weekStart, onWeekChange }: { weekStart: Date; onWeekChange
   )
 }
 
-function FeedbackButton() {
-  const [open, setOpen] = useState(false)
+function FeedbackButton({ open, onOpenChange: setOpen }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [text, setText] = useState("")
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -314,7 +321,7 @@ function FeedbackButton() {
         </span>
         <span className="px-0.5 text-sm font-medium whitespace-nowrap text-(--tl-fg-button)">Feedback</span>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={6} className="w-72 gap-2 p-2.5">
+      <PopoverContent align="end" sideOffset={6} className="w-72 gap-2 p-2.5" title="Feedback">
         <form
           className="flex flex-col gap-2"
           onSubmit={(e) => {
@@ -347,5 +354,195 @@ function FeedbackButton() {
         </form>
       </PopoverContent>
     </Popover>
+  )
+}
+
+/** Phone-only "Filters" button: week, warnings, location and department in one sheet. */
+function FiltersSheet(props: ScheduleToolbarProps) {
+  const {
+    weekStart,
+    onWeekChange,
+    conflicts,
+    overtime,
+    highlight,
+    onHighlight,
+    onFixWarnings,
+    location,
+    onLocationChange,
+    department,
+    onDepartmentChange,
+    departments,
+  } = props
+  const [open, setOpen] = useState(false)
+  const isBase = isSameDay(weekStart, BASE_WEEK_START)
+  const active = Number(!isBase) + Number(location !== "all") + Number(department !== "all") + Number(!!highlight)
+  const warnings = conflicts + overtime
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className={cn(CONTROL, "h-10 gap-1.5 px-3 md:hidden")}>
+        <FigmaIcon src="/figma/icons/filter-lines.svg" />
+        <span className="text-sm font-medium whitespace-nowrap text-(--tl-fg-body)">Filters</span>
+        {active > 0 && (
+          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-(--tl-publish) px-1 text-[11px] font-semibold text-white tabular-nums">
+            {active}
+          </span>
+        )}
+        {warnings > 0 && (
+          <span aria-label={`${warnings} shift warnings`} className="size-1.5 rounded-full bg-(--tl-danger)" />
+        )}
+      </PopoverTrigger>
+      <PopoverContent align="start" sideOffset={6} className="w-80 gap-4 p-3" title="Filters">
+        <div className="flex items-center justify-between">
+          <p className="text-base font-medium text-(--tl-fg-strong)">Filters</p>
+          <button
+            type="button"
+            disabled={active === 0}
+            onClick={() => {
+              onWeekChange(BASE_WEEK_START)
+              onLocationChange("all")
+              onDepartmentChange("all")
+              onHighlight(null)
+            }}
+            className="h-10 rounded-md px-2 text-sm font-medium text-(--tl-fg-link) disabled:opacity-40"
+          >
+            Reset
+          </button>
+        </div>
+
+        <FilterSection label="Week">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Previous week"
+              onClick={() => onWeekChange(addWeeks(weekStart, -1))}
+              className="tl-press flex size-10 items-center justify-center rounded-lg shadow-(--tl-shadow-chip)"
+            >
+              <ChevronLeftIcon className="size-4 text-(--tl-fg-legend)" />
+            </button>
+            <span className="flex-1 text-center text-sm font-medium text-(--tl-fg-strong) tabular-nums">
+              {format(weekStart, "MMM d")} – {format(addDays(weekStart, 6), "MMM d, yyyy")}
+            </span>
+            <button
+              type="button"
+              aria-label="Next week"
+              onClick={() => onWeekChange(addWeeks(weekStart, 1))}
+              className="tl-press flex size-10 items-center justify-center rounded-lg shadow-(--tl-shadow-chip)"
+            >
+              <ChevronRightIcon className="size-4 text-(--tl-fg-legend)" />
+            </button>
+          </div>
+          {!isBase && (
+            <button
+              type="button"
+              onClick={() => onWeekChange(BASE_WEEK_START)}
+              className="tl-press h-10 rounded-lg text-sm font-medium text-(--tl-fg-button) shadow-(--tl-shadow-chip)"
+            >
+              Back to current week
+            </button>
+          )}
+        </FilterSection>
+
+        <FilterSection label="Shift warnings">
+          {warnings > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {conflicts > 0 && (
+                <WarningChip
+                  label={`${conflicts} ${conflicts === 1 ? "Conflict" : "Conflicts"}`}
+                  pressed={highlight === "conflict"}
+                  onClick={() => onHighlight(highlight === "conflict" ? null : "conflict")}
+                />
+              )}
+              {overtime > 0 && (
+                <WarningChip
+                  label={`${overtime} Overtime`}
+                  pressed={highlight === "overtime"}
+                  onClick={() => onHighlight(highlight === "overtime" ? null : "overtime")}
+                />
+              )}
+              <button
+                type="button"
+                onClick={onFixWarnings}
+                className="h-10 px-1 text-sm font-medium text-(--tl-fg-link) underline decoration-dotted underline-offset-[3px]"
+              >
+                Fix warnings
+              </button>
+            </div>
+          ) : (
+            <span className="flex items-center gap-1 text-sm font-medium text-[#0f9e70]">
+              <CheckIcon className="size-3.5" strokeWidth={2.2} />
+              No warnings
+            </span>
+          )}
+        </FilterSection>
+
+        <FilterSection label="Location">
+          <Segmented
+            value={location}
+            onChange={(v) => onLocationChange(v as LocationId | "all")}
+            options={[{ value: "all", label: "All locations" }, ...LOCATIONS.map((l) => ({ value: l.id, label: l.name }))]}
+          />
+        </FilterSection>
+
+        <FilterSection label="Department">
+          <Segmented
+            value={department}
+            onChange={(v) => onDepartmentChange(v as DepartmentId | "all")}
+            options={[{ value: "all", label: "All" }, ...departments.map((d) => ({ value: d.id, label: d.name, dot: d.accent }))]}
+          />
+        </FilterSection>
+
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="tl-press tl-press-dark h-11 rounded-lg bg-(--tl-publish) text-sm font-medium text-white"
+        >
+          Done
+        </button>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <p className="text-xs font-medium text-(--tl-fg-legend)">{label}</p>
+      {children}
+    </section>
+  )
+}
+
+function Segmented({
+  value,
+  onChange,
+  options,
+}: {
+  value: string
+  onChange: (value: string) => void
+  options: { value: string; label: string; dot?: string }[]
+}) {
+  return (
+    <div role="radiogroup" className="flex flex-wrap gap-2">
+      {options.map((o) => {
+        const on = o.value === value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "tl-press flex h-10 items-center gap-1.5 rounded-lg bg-white px-3 text-sm font-medium text-(--tl-fg-body) shadow-(--tl-shadow-chip)",
+              on && "bg-(--tl-nav-active)! text-(--tl-fg-strong) shadow-[0px_0px_0px_1px_#cfcfcf]"
+            )}
+          >
+            {o.dot && <span className="size-2 rounded-full" style={{ backgroundColor: o.dot }} />}
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
   )
 }
