@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/responsive-popover"
-import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon, VDivider } from "./figma-icon"
 
 type TopBarProps = {
@@ -161,12 +160,12 @@ export function TopBar({
               Employee
               <DropdownMenuShortcut>E</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => comingSoon("Shift templates")}>Shift template</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => comingSoon("Add department")}>
+            <DropdownMenuItem>Shift template</DropdownMenuItem>
+            <DropdownMenuItem>
               Department
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => comingSoon("Import from CSV")}>Import from CSV…</DropdownMenuItem>
+            <DropdownMenuItem>Import from CSV…</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -210,7 +209,6 @@ export function TopBar({
             <TooltipTrigger
               className="tl-icon-btn size-3.5"
               aria-label="Inbox"
-              onClick={() => comingSoon("Inbox")}
             >
               <FigmaIcon src="/figma/icons/inbox-01.svg" />
             </TooltipTrigger>
@@ -250,7 +248,7 @@ export function TopBar({
               Notifications
               <DropdownMenuShortcut>{NOTIFICATIONS.length}</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => comingSoon("Inbox")}>
+            <DropdownMenuItem>
               <FigmaIcon src="/figma/icons/inbox-01.svg" />
               Inbox
             </DropdownMenuItem>

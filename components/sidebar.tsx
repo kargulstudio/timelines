@@ -24,7 +24,6 @@ import {
   WORKSPACES,
   type NavItem,
 } from "@/lib/data"
-import { comingSoon } from "@/lib/prototype"
 import { FigmaIcon } from "./figma-icon"
 
 type SidebarProps = {
@@ -100,7 +99,7 @@ export function Sidebar({ active, onNavigate, onCollapse, isDesktop, mobileOpen,
               ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => comingSoon("Create workspace")}>
+            <DropdownMenuItem>
               Create workspace…
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -117,7 +116,7 @@ export function Sidebar({ active, onNavigate, onCollapse, isDesktop, mobileOpen,
               <TooltipContent>More</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end" className="w-48" sideOffset={8}>
-              <DropdownMenuItem onClick={() => comingSoon("Workspace settings")}>
+              <DropdownMenuItem>
                 Workspace settings
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -130,7 +129,7 @@ export function Sidebar({ active, onNavigate, onCollapse, isDesktop, mobileOpen,
                 Keyboard shortcuts
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => comingSoon("Sign out")}>Sign out</DropdownMenuItem>
+              <DropdownMenuItem>Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Tooltip>
@@ -149,7 +148,6 @@ export function Sidebar({ active, onNavigate, onCollapse, isDesktop, mobileOpen,
       {/* New timeline — 1:9830 */}
       <button
         type="button"
-        onClick={() => comingSoon("New timeline")}
         className="tl-press mt-4 flex h-[30px] pointer-coarse:h-10 w-full shrink-0 items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-white pr-[11px] pl-2.5 shadow-(--tl-shadow-new)"
       >
         <span className="flex size-3.5 items-center justify-center">

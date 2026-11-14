@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { addDays, format, isSameDay } from "date-fns"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { comingSoon } from "@/lib/prototype"
 import { BREAKPOINTS, useMediaQuery } from "@/lib/use-media-query"
 import { computeWarnings, formatHours, shiftHours, weeklyHours, type DayStatus } from "@/lib/schedule"
 import {
@@ -13,11 +12,6 @@ import {
   DAY_NAMES,
   DEPARTMENTS,
   EMPLOYEES,
-  NAV_FOOTER,
-  NAV_MAIN,
-  NAV_REPORTS_CHILDREN,
-  NAV_TOP,
-  NAV_WORK,
   SHIFTS,
   type DayIndex,
   type Department,
@@ -32,8 +26,6 @@ import { Sidebar } from "./sidebar"
 import { TopBar } from "./top-bar"
 import { ScheduleToolbar } from "./schedule-toolbar"
 import { DepartmentCard, type SortMode } from "./department-card"
-
-const ALL_NAV = [...NAV_TOP, ...NAV_MAIN, ...NAV_REPORTS_CHILDREN, ...NAV_WORK, ...NAV_FOOTER]
 
 /** Figma 1:9814 — "Business scheduling platform" (1440×1024). */
 export function TimelinesApp() {
@@ -286,11 +278,9 @@ export function TimelinesApp() {
     toast.success(`${name} added to ${departments.find((d) => d.id === dept)!.name}`)
   }
 
-  // Only Timelines exists in this prototype; every other destination says so.
-  function navigate(id: string) {
+  // Only Timelines exists in this prototype; navigating just closes the mobile drawer.
+  function navigate() {
     setDrawerOpen(false)
-    if (id === "timelines") return
-    comingSoon(ALL_NAV.find((n) => n.id === id)?.label ?? "This page")
   }
 
   /* ------------------------------ filtering ----------------------------- */

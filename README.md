@@ -37,7 +37,7 @@ Other scripts: `pnpm build` · `pnpm start` · `pnpm lint`
 - **Cards**: collapse, show or hide links, sort, add an employee, rename the department inline (pencil, or double-click the title) and remove an employee from the row menu
 - **Publish schedule** warns while issues remain, then publishes
 - **Mobile**: below 1024px the sidebar is a drawer and the week scrolls sideways (snapping per day) under a sticky employee column; on phones search collapses to an icon, filters sit behind one *Filters* button, secondary actions move into a "…" menu, and popovers and editors open as bottom sheets
-- Anything not built yet (other pages, workspace settings, imports, shift templates…) says it is coming soon
+- Anything not built yet (other pages, workspace settings, imports, shift templates…) does nothing
 
 ## Stack
 
@@ -62,5 +62,4 @@ Other scripts: `pnpm build` · `pnpm start` · `pnpm lint`
 | [`components/figma-icon.tsx`](components/figma-icon.tsx) | Local Figma icon helper |
 | [`lib/data.ts`](lib/data.ts) | Mock departments, employees, shifts, connectors and warnings |
 | [`lib/schedule.ts`](lib/schedule.ts) | Time parsing, placement rules, weekly hours and warning checks |
-| [`lib/prototype.ts`](lib/prototype.ts) | `comingSoon()` toast for unbuilt features |
 | [`app/icon.svg`](app/icon.svg), [`app/apple-icon.tsx`](app/apple-icon.tsx) | Favicon and Apple touch icon from the Acme mark (`public/figma/logo.svg`) |
