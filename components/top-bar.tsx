@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type Ref } from "react"
-import { MenuIcon, MoreHorizontalIcon, SearchIcon, XIcon } from "lucide-react"
+import { MoreHorizontalIcon, SearchIcon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -63,7 +63,9 @@ export function TopBar({
     <div className="flex h-[30px] items-center justify-between gap-2 max-md:h-10">
       <div className={cn("flex min-w-0 items-center gap-3 max-md:gap-1", searchExpanded && "max-md:flex-1")}>
         <button type="button" aria-label="Open menu" onClick={onOpenMenu} className={cn(PHONE_ICON_BTN, "-ml-2 lg:hidden")}>
-          <MenuIcon className="size-5" strokeWidth={1.75} />
+          <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" className="size-5">
+            <path d="M4 9h16M4 15h16" />
+          </svg>
         </button>
         {!searchExpanded && (
           <button
