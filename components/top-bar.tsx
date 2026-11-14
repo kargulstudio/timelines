@@ -64,7 +64,7 @@ export function TopBar({
       <div className={cn("flex min-w-0 items-center gap-3 max-md:gap-1", searchExpanded && "max-md:flex-1")}>
         <button type="button" aria-label="Open menu" onClick={onOpenMenu} className={cn(PHONE_ICON_BTN, "-ml-2 lg:hidden")}>
           <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" className="size-5">
-            <path d="M4 9h16M4 15h16" />
+            <path d="M4 6h16M4 12h10M4 18h16" />
           </svg>
         </button>
         {!searchExpanded && (
